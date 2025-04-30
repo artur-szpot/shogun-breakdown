@@ -1,7 +1,7 @@
 from typing import List
 
 from enums import RoomEnum
-from weapon import Weapon
+from data.weapon import Weapon
 
 
 class AttackQueueChange:

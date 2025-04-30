@@ -2,8 +2,8 @@ from typing import List, Dict, Optional
 
 from constants import RIGHT_SHOP_TYPE, SHOP_ROOM, LEFT_SHOP_TYPE, FREE_POTION, SHOP_DATA, ALREADY_UPGRADED, \
     SHOP_ITEMS_SALE, SHOP_ITEM_NAMES, PRICE, REWARD, TILE_UPGRADE, IN_PROGRESS, CURRENT_LOCATION, MAP_SAVE
+from data.mappers import shop_mapper
 from enums import ShopServiceEnum, ShopType, SkillEnum, ShopEnum
-from mappers import shop_mapper
 
 skill_price_mapper = {
     SkillEnum.UNFRIENDLY_FIRE: -1,

@@ -1,17 +1,17 @@
 from typing import Optional
 
-from compare_battle import battle_update, battle_started, run_started
-from compare_map import entered_map
-from compare_reward import reward_update, entered_reward
-from compare_shop import shop_update, entered_shop
+from compare.compare_battle import battle_update, battle_started, run_started
+from compare.compare_map import entered_map
+from compare.compare_reward import reward_update, entered_reward
+from compare.compare_shop import shop_update, entered_shop
+from data.snapshot import Snapshot
 from enums import GamePhase, LogLevel
-from history import History
-from snapshot import Snapshot
+from history.history import History
 
 
 def compare_snapshots(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot,
                       log_level: LogLevel) -> History:
-    if new_snapshot.game_stats.turns == 1:
+    if new_snapshot.game_stats.turns == 0:
         return run_started(history, new_snapshot, log_level)
     elif previous_snapshot is None:
         if log_level == LogLevel.DEBUG:
@@ -22,6 +22,8 @@ def compare_snapshots(history: History, previous_snapshot: Optional[Snapshot], n
         if new_snapshot.game_phase == GamePhase.BATTLE:
             return battle_started(history, previous_snapshot, new_snapshot, log_level)
         if new_snapshot.game_phase == GamePhase.BATTLE_REWARDS:
+            if previous_snapshot is not None:
+                history = battle_update(history, previous_snapshot, new_snapshot, log_level)
             return entered_reward(history, previous_snapshot, new_snapshot, log_level)
         if new_snapshot.game_phase == GamePhase.MAP_JOURNEY:
             return entered_map(history, log_level)

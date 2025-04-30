@@ -1,12 +1,14 @@
 import json
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 from constants import SKILLS, HERO, FACING, SPECIAL_MOVE_COOLDOWN, MAX_HP, ENTITY_STATE, HP, POISON, ICE, CURSE, SHIELD, \
     HERO_ENUM, HITS, RUN_STATS, FRIENDLY_KILLS, HEAL_PICKUPS, POTION_PICKUPS, SCROLL_PICKUPS, COMBAT_ROOMS_CLEARED, \
     TURNS, COMBOS, COINS, TURN_AROUNDS, SKILL_LEVELS, TIME, CELL, NEW_TILES_PICKED, CONSUMABLES_USED, DAY, PRICE, \
     REWARD, REWARD_ROOM, TILE_UPGRADE, TILE_REWARDS, EXHAUSTED, REROLL_PRICE, IN_PROGRESS, FREE_POTION_ALREADY_GIVEN, \
     SHOP_DATA, SHOP_ROOM, RIGHT_SHOP_TYPE, LEFT_SHOP_TYPE, FREE_POTION, ALREADY_UPGRADED, SHOP_ITEMS_SALE, \
-    SHOP_ITEM_NAMES, MAP_SELECTION, VERSION, RUN_NUMBER, RUN_IN_PROGRESS, NAME, ATTACK_QUEUE, DECK, POTIONS
+    SHOP_ITEM_NAMES, MAP_SELECTION, VERSION, RUN_NUMBER, RUN_IN_PROGRESS, NAME, ATTACK_QUEUE, DECK, POTIONS, \
+    COMBAT_ROOM, ENEMIES, PICKUP_LOCATIONS, PICKUPS, UNTIL_NEXT_WAVE, WAVE_NUMBER, PATTERN_INDEX, ELITE_TYPE, \
+    FIRST_TURN, ENEMY_TILE_EFFECT, TILE_TO_PLAY, PREVIOUS_ACTION, ACTION, ENEMY
 
 
 def is_empty_dict(source: Dict) -> Tuple[bool, Dict]:
@@ -16,6 +18,14 @@ def is_empty_dict(source: Dict) -> Tuple[bool, Dict]:
             is_empty, sub_value = is_empty_dict(value)
             if not is_empty:
                 whats_left[key] = sub_value
+        elif isinstance(value, List):
+            sub_values = []
+            for item in value:
+                sub_empty, sub_value = is_empty_dict(item)
+                if not sub_empty:
+                    sub_values.append(sub_value)
+            if len(sub_values):
+                whats_left[key] = sub_values
         else:
             whats_left[key] = value
     return not bool(whats_left), whats_left
@@ -77,6 +87,30 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[SHOP_ROOM][LEFT_SHOP_TYPE]
     del raw_data[SHOP_ROOM][RIGHT_SHOP_TYPE]
 
+    # Remove battle room state data
+    for i in range(len(raw_data[COMBAT_ROOM][ENEMIES])):
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENTITY_STATE][SHIELD]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENTITY_STATE][CURSE]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENTITY_STATE][ICE]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENTITY_STATE][POISON]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENTITY_STATE][HP]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENTITY_STATE][MAX_HP]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][FACING]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][CELL]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ATTACK_QUEUE]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENEMY]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ACTION]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][PREVIOUS_ACTION]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][TILE_TO_PLAY]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ENEMY_TILE_EFFECT]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][FIRST_TURN]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][ELITE_TYPE]
+        del raw_data[COMBAT_ROOM][ENEMIES][i][PATTERN_INDEX]
+    del raw_data[COMBAT_ROOM][WAVE_NUMBER]
+    del raw_data[COMBAT_ROOM][UNTIL_NEXT_WAVE]
+    del raw_data[PICKUPS]
+    del raw_data[PICKUP_LOCATIONS]
+
     # Other
     del raw_data[MAP_SELECTION]  # which game phase it is
 
@@ -90,10 +124,6 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[SHOP_ROOM][SHOP_DATA][FREE_POTION_ALREADY_GIVEN]  # not interesting
 
     # Remove temporarily ignored data # TODO: actually use all of it
-
-    del raw_data["combatRoom"]  # state of combat
-    del raw_data["pickups"]  # what lies on the ground
-    del raw_data["pickupsCellIndex"]  # where it lies
 
     del raw_data["mapSaveData"]  # can extract which room we're currently in; can construct run map from shopComponent
     del raw_data["progressionSaveData"]  # will be useful to extract which room we're in

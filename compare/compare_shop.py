@@ -1,8 +1,8 @@
 from typing import Optional
 
 from enums import LogLevel
-from history import History
-from snapshot import Snapshot
+from history.history import History
+from data.snapshot import Snapshot
 
 
 def entered_shop(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot,

@@ -1,5 +1,5 @@
 from enums import LogLevel
-from history import History
+from history.history import History
 
 
 def entered_map(history: History, log_level: LogLevel) -> History:

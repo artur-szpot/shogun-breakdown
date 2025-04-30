@@ -1,71 +1,9 @@
-from typing import Optional
-
-from enums import LogLevel
-from history import History
-from snapshot import Snapshot
-from weapon import Weapon
-
-
-def pretty_print_time_part(part: int) -> str:
-    return str(part).rjust(2, '0')
-
-
-def pretty_print_time(time: int) -> str:
-    hours = time // 3600
-    minutes = (time - hours * 3600) // 60
-    seconds = time - hours * 3600 - minutes * 60
-    result = f"{pretty_print_time_part(minutes)}:{pretty_print_time_part(seconds)}"
-    if not hours:
-        return result
-    return f"{pretty_print_time_part(hours)}:{result}"
-
-
-def run_started(history: History, new_snapshot: Snapshot, log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print("== RUN STARTED ==")
-        print()
-    return battle_started(history, new_snapshot, new_snapshot, log_level)
-
-
-def battle_started(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot,
-                   log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print()
-        if previous_snapshot is None:
-            print("== IN A BATTLE ==")
-        else:
-            print("== BATTLE STARTED ==")
-        print(f"== {new_snapshot.get_room()} ==")
-        print()
-    return history
-
-
-def battle_finished(history: History, previous_snapshot: Snapshot, log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print()
-        print("== BATTLE WON ==")
-        print(f"== {previous_snapshot.get_room()} ==")
-        print(f"Turns taken: {'unknown'}")
-        print(f"Time taken: {'unknown'}")
-        print(f"Hits taken: {'unknown'}")
-        print(f"Potions used: {'unknown'}")
-        print(f"Combos: {'unknown'}")
-        print()
-    elif log_level == LogLevel.SPLITS:
-        print(f"== {previous_snapshot.get_room()} ==")
-        print(f"Turns taken: {'unknown'}")
-        print(f"Time taken: {'unknown'}")
-        print(f"Hits taken: {'unknown'}")
-        print(f"Potions used: {'unknown'}")
-        print(f"Combos: {'unknown'}")
-        print()
-    return history
-
-
-def battle_update(history, previous_snapshot: Snapshot, new_snapshot: Snapshot, log_level: LogLevel) -> History:
-    if previous_snapshot.game_stats.turns == new_snapshot.game_stats.turns:
-        # Not sure yet what happens to write in the file twice - maybe update before and after enemy turn.
-        return history
+def battle_update_old(history: History, previous_snapshot: Snapshot, new_snapshot: Snapshot,
+                      log_level: LogLevel) -> History:
+    # TODO remove the below dev stuff
+    print(new_snapshot.room.pretty_print_pickups())
+    for enemy in new_snapshot.room.enemies:
+        print(enemy.pretty_print())
 
     # WHAT TIME IS IT
     turns = new_snapshot.game_stats.turns
@@ -138,8 +76,8 @@ def battle_update(history, previous_snapshot: Snapshot, new_snapshot: Snapshot, 
 
     # 2. executed queue
 
-    # 3. moved
-    hero_position_change = new_snapshot.hero.cell - previous_snapshot.hero.cell
+    # 3. moved and picked stuff up
+    hero_position_change = new_snapshot.hero.position.cell - previous_snapshot.hero.position.cell
     if hero_position_change == 1:
         if log_level == LogLevel.DEBUG:
             print("Moved right")
@@ -156,16 +94,18 @@ def battle_update(history, previous_snapshot: Snapshot, new_snapshot: Snapshot, 
         hero_moved = False
 
     # 4. turned around
-    if new_snapshot.hero.facing != previous_snapshot.hero.facing:
+    if new_snapshot.hero.position.facing != previous_snapshot.hero.position.facing:
         if log_level == LogLevel.DEBUG:
-            print(f"Turned {'right' if new_snapshot.hero.facing == 1 else 'left'}")
+            print(f"Turned {'right' if new_snapshot.hero.position.facing == 1 else 'left'}")
         hero_flipped = True
 
     # 5. drank a potion
     # COMPLICATED!
+    # edamame sadly always possible
+    # requires knowledge of enemy movement first
 
     # 6. used special
-    if new_snapshot.hero.special_move_cooldown == 0:
+    if new_snapshot.room.hero.special_move_cooldown == 0:
         if log_level == LogLevel.DEBUG:
             print("Used special move")
         hero_used_special = True
@@ -182,5 +122,14 @@ def battle_update(history, previous_snapshot: Snapshot, new_snapshot: Snapshot, 
     # WHAT HAVE THEY DONE
     # enemies spawned, prepared actions, executed actions
     # hits taken
+    # who attacks first
+
+    # THE RABBIT HOLE: simulate possible outcomes
+    # what can I do between turns?
+    # execute special - 1 and only outcome, since it cannot have cooldown 0
+    # move left/right/turn - can result from executing queue or not
+    # add to queue - unless immediate, 1 and only outcome
+    # execute queue - DAAAAMN
+    # any free actions (turn, immediate tile, remove queue, reorder queue) - quite a few too
 
     return history

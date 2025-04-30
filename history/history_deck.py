@@ -1,8 +1,8 @@
 from typing import List, Optional
 
 from enums import WeaponUpgradePlace, RoomEnum, ShopEnum
-from snapshot import Snapshot
-from weapon import Weapon
+from data.snapshot import Snapshot
+from data.weapon import Weapon
 
 
 class WeaponRewardUpgradeSnapshot:

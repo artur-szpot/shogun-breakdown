@@ -1,20 +1,18 @@
-import base64
-import json
 import os
 from time import sleep
 
-from compare import compare_snapshots
+from compare.compare import compare_snapshots
 from enums import LogLevel
-from history import History
-from snapshot import Snapshot
-from test_data import is_empty_dict
+from history.history import History
+from data.snapshot import Snapshot
 
 
 def main_loop(too_early=False):
     get_time = lambda f: os.stat(f).st_mtime
     log_level = LogLevel.DEBUG
 
-    save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    save_dir = "C:\\Users\\szpot\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    # save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
     save_file = "RunSaveData.dat"
     filename = save_dir + "\\" + save_file
 

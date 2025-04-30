@@ -35,6 +35,11 @@ class ShopType(Enum):
 
 
 class WeaponEnum(Enum):
+    PUSH = -4
+    EXPLOSION = -3
+    STOP = -2
+    SHOCK = -1
+    KATANA = 0
     ARROW = 1
     SPEAR = 2
     BO = 3
@@ -42,49 +47,60 @@ class WeaponEnum(Enum):
     SWIRL = 5
     DRAGON_PUNCH = 6
     GRAPPLING_HOOK = 7
-    TWIN_TESEEN = 8
+    TWIN_TESSEN = 8
     TRAP = 9
     CHARGE = 12
+    KILL_SUMMONS = 13
+    SHADOW_DASH = 14
     SMOKE_BOMB = 15
     NAGIBOKU = 17
+    SHURIKEN = 18
     CHAKRAM = 19
+    CURSE = 20
     EARTH_IMPALE = 22
     MIRROR = 23
+    BACK_STRIKE = 24
     SHADOW_KAMA = 25
+    TETSUBO = 26
+    KUNAI = 27
+    BOSS_SUMMON = 28
+    BLADE_OF_PATIENCE = 29
     CROSSBOW = 31
     SWAP_TOSS = 32
+    ORIGIN_OF_SYMMETRY = 33
     TANEGASHIMA = 34
+    SHIELD_ALLY = 35
+    CORRUPTED_BARRAGE = 36
     SCAR_STRIKE = 37
     METEOR_HAMMER = 39
     KI_PUSH = 40
+    VOLLEY = 41
+    BACK_CHARGE = 42
+    COPYCAT_MIRROR = 43
     BACK_SHADOW_DASH = 45
     SAI = 46
+    BLAZING_SUISEI = 47
     MON = 48
+    THORNS = 49
+    CORRUPTED_WAVE_LTR = 50
+    CORRUPTED_WAVE_RTL = 51
+    CORRUPTED_EXPLOSION = 54
 
-    KATANA = -1
-    TETSUBO = -2
-    BLADE_OF_PATIENCE = -3
     HOOKBLADE = -4
-    BACK_STRIKE = -6
-    BLAZING_SUISEI = -10
-    SHURIKEN = -11
-    KUNAI = -13
-    THORNS = -18
-    SHADOW_DASH = -19
-    BACK_CHARGE = -20
     BACK_SMOKE_BOMB = -21
-    CURSE = -22
     SHARP_TURN = -23
     SIGNATURE_MOVE = -24
     DASH = -26
-    ORIGIN_OF_SYMMETRY = -27
+    MAKU = 666  # next stage on sato
 
 
 class WeaponAttackEffectEnum(Enum):
-    CURSE = 666
     ICE = 1
+    DOUBLE_STRIKE = 2
     SHOCKWAVE = 3
     POISON = 4
+    PERFECT_STRIKE = 5
+    CURSE = 6
 
 
 class WeaponTileEffectEnum(Enum):
@@ -92,20 +108,25 @@ class WeaponTileEffectEnum(Enum):
 
 
 class SkillEnum(Enum):
-    UNFRIENDLY_FIRE = -2
+    UNFRIENDLY_FIRE = 1003
+    CENTRAL_DOMINION = 1008
+
+    COMBO_COIN = 2001
+    TRIPLE_COMBO_HEAL = 2002
+    COMBO_CURSE = 2004
+
+    DAMAGING_MOVE = 4003
+
+    ROGUE_RETAIL = 9003
+
     MINDFULLNESS = -3
     BIG_POCKETS = -4
-    ROGUE_RETAIL = -5
     BACK_STABBER = -6
     SNIPER = -7
     MONOMANCER = -8
     CLOSE_COMBAT = -9
-    CENTRAL_DOMINION = -10
     ODD_CURSE = -11
-    COMBO_COIN = -12
     COMBO_RECHARGE = -13
-    TRIPLE_COMBO_HEAL = -14
-    COMBO_CURSE = -15
     COMBO_DEAL = -16
     KOBUSHI_COMBO = -17
     COMBO_BOON = -18
@@ -120,7 +141,6 @@ class SkillEnum(Enum):
     OVERFLOW_GUARD = -27
     TWO_WAY_MOVE = -28
     QUICK_RECOVERY = -29
-    DAMAGING_MOVE = -30
     DYNAMIC_BOOST = -31
     CURSING_MOVE = -32
     CHIKARA_CRUSH = -33
@@ -130,11 +150,17 @@ class SkillEnum(Enum):
     SEIRUYS_SCALE = -37
 
 
-class PotionEnum(Enum):
-    RAIN_OF_MIRROS = 7
-    EDAMAME_BREW = 0
-    COOL_UP = 2
-    SHIELD = 3
+class PickupEnum(Enum):
+    ANY = -1  # Allows setting predictions
+    GOLD = 0
+    EDAMAME_BREW = 100
+    COOL_UP = 101
+    KAMI_BREW = 102
+    MASS_CURSE = 200
+    MASS_ICE = 201
+    MASS_POISON = 202
+    # ARTIFACT: 203
+    RAIN_OF_MIRRORS = 204
 
 
 class LogLevel(Enum):
@@ -144,36 +170,102 @@ class LogLevel(Enum):
 
 
 class RoomEnum(Enum):
-    BAMBOO_GROVE = 0
-    WHISPERING_CAVES = 1
-    MOONLIT_PORT = 3
-    SPIRIT_GATEWAY = 4
-    FORSAKEN_LANDS = 5
-    HOT_SPRINGS = 6
-    THEATRE_OF_SHADOWS = 7
-    HIDEYOSHI = 8
-    NOBUNAGA = 9
-    IEIASU = 10
-    SHOGUN = 11
+    BAMBOO_GROVE = 10
+    WHISPERING_CAVES = 20
+    HIBIKU_WASTELANDS = 30
+    MOONLIT_PORT = 50
+    SPIRIT_GATEWAY = 60
+    FORSAKEN_GROUNDS = 70
+    HOT_SPRINGS = 80
+    THEATRE_OF_SHADOWS = 90
+    HIDEYOSHI = 100
+    NOBUNAGA = 110
+    IEIASU = 120
+    SHOGUN = 130
 
 
 class ShopEnum(Enum):
-    BAMBOO_GROVE_UP = 0
-    BAMBOO_GROVE_DOWN = 1
-    BEFORE_MOONLIT_PORT_UP = 2
-    BEFORE_MOONLIT_PORT_CENTER = 3
-    BEFORE_MOONLIT_PORT_DOWN = 4
-    MOONLIT_PORT = 5
-    SPIRIT_GATEWAY_UP = 6
-    SPIRIT_GATEWAY_DOWN = 7
-    FORSAKEN_LANDS_UP = 8
-    FORSAKEN_LANDS_DOWN = 9
-    HIDEYOSHI = 10
-    NOBUNAGA = 11
-    IEIASU = 12
-    SHOGUN = 13
+    BAMBOO_GROVE_UP = 11
+    BAMBOO_GROVE_DOWN = 12
+    BEFORE_MOONLIT_PORT_UP = 31
+    BEFORE_MOONLIT_PORT_CENTER = 32
+    BEFORE_MOONLIT_PORT_DOWN = 33
+    MOONLIT_PORT = 51
+    SPIRIT_GATEWAY_UP = 61
+    SPIRIT_GATEWAY_DOWN = 62
+    FORSAKEN_LANDS_UP = 71
+    FORSAKEN_LANDS_DOWN = 72
+    HIDEYOSHI = 99
+    NOBUNAGA = 109
+    IEIASU = 119
+    SHOGUN = 129
 
 
 class WeaponUpgradePlace(Enum):
     REWARD = 0
     SHOP = 1
+
+
+class EnemyEnum(Enum):
+    ASHIGARU_ARCHER = 0
+    SPIKE_CHARGER = 1
+    SHINOBI = 3
+    GUARDIAN = 4
+    SHADOW_CHARGER = 5
+    YARI_MASTER = 6
+    TWIN_TACHI = 8
+    ASHIGARU = 9
+    SUMMONER = 12
+    GRAPPLER = 13
+    YUMI_SNIPER = 14
+    BARRICADE = 15
+    STRIDER = 16
+    BLIGHT_CHARGER = 17
+    WARDEN = 18
+    KABUKAI = 19
+    THORNS = 20
+    CORRUPTED_PROGENY = 22
+    CORRUPTED_BARU = 104
+    NOBUNAGA = 109
+    THE_TWINS = 112
+    FUMIKO = 113
+    CORRUPTED_REI = 115
+    # CORRUPTED_DAISUKE = 115
+    THE_SHOGUN = 120
+    THE_SHOGUN_PHASE_TWO = 121
+
+    BARU = -1
+    IEIASU = -2
+    HIDEYOSHI = -3
+    SATO = -4
+    KOWA = -5
+    REI = -6
+    IWAO = -7
+    THE_STATUE = -8
+
+
+class EnemyEliteEnum(Enum):
+    NOT_ELITE = 0
+    REACTIVE_SHIELD = 1
+    DOUBLE_STRIKER = 2
+    HEAVY = 3
+    QUICK = 4
+    CORRUPTED = 5
+
+
+class EnemyActionEnum(Enum):
+    WAIT = 0
+    MOVE_LEFT = 1
+    MOVE_RIGHT = 2
+    EXECUTE_QUEUE = 3
+    EXPAND_QUEUE = 4
+    TURN_AROUND = 5  # TODO ?????
+    TURN_AROUND_BOSS = 6  # TODO ?????
+
+
+class HeroEnum(Enum):
+    RONIN = 0
+    WANDERER = -1
+    SHADOW = -2
+    JUJITSUKA = 3
+    CHAIN_MASTER = -4

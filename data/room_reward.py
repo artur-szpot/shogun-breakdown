@@ -1,7 +1,7 @@
 from typing import List, Dict
 
-from constants import PRICE, REWARD, REWARD_ROOM, TILE_UPGRADE, TILE_REWARDS, EXHAUSTED, REROLL_PRICE, IN_PROGRESS
-from weapon import Weapon
+from constants import REWARD, REWARD_ROOM, TILE_UPGRADE, TILE_REWARDS, EXHAUSTED, REROLL_PRICE, IN_PROGRESS
+from data.weapon import Weapon
 
 
 class RewardRoom:
