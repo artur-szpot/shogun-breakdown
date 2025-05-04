@@ -1,0 +1,81 @@
+from enum import Enum
+
+
+class WeaponEnum(Enum):
+    POISON_TICK = -5
+    PUSH = -4
+    EXPLOSION = -3
+    STOP = -2
+    SHOCK = -1
+    KATANA = 0
+    ARROW = 1
+    SPEAR = 2
+    BO = 3
+    LIGHTINING = 4
+    SWIRL = 5
+    DRAGON_PUNCH = 6
+    GRAPPLING_HOOK = 7
+    TWIN_TESSEN = 8
+    TRAP = 9
+    # ARTIFACT: 10
+    SHIELD_SELF = 11
+    CHARGE = 12
+    BACK_CHARGE = 13
+    SHADOW_DASH = 14
+    SMOKE_BOMB = 15
+    BACK_SMOKE_BOMB = 16
+    NAGIBOKU = 17
+    SHURIKEN = 18
+    CHAKRAM = 19
+    CURSE = 20
+    # ARTIFACT: 21
+    EARTH_IMPALE = 22
+    MIRROR = 23
+    BACK_STRIKE = 24
+    SHADOW_KAMA = 25
+    TETSUBO = 26
+    KUNAI = 27
+    BOSS_SUMMON = 28
+    BLADE_OF_PATIENCE = 29
+    DASH = 30
+    CROSSBOW = 31
+    SWAP_TOSS = 32
+    ORIGIN_OF_SYMMETRY = 33
+    TANEGASHIMA = 34
+    SHIELD_ALLY = 35
+    CORRUPTED_BARRAGE = 36
+    SCAR_STRIKE = 37
+    # ARTIFACT: 38
+    METEOR_HAMMER = 39
+    KI_PUSH = 40
+    VOLLEY = 41
+    BACK_CHARGE_ALT = 42
+    COPYCAT_MIRROR = 43
+    # ARTIFACT: 44
+    BACK_SHADOW_DASH = 45
+    SAI = 46
+    BLAZING_SUISEI = 47
+    MON = 48
+    THORNS = 49
+    CORRUPTED_WAVE_LTR = 50
+    CORRUPTED_WAVE_RTL = 51
+    HOOKBLADE = 52
+    # ARTIFACT: 53
+    CORRUPTED_EXPLOSION = 54
+
+    SHARP_TURN = -23
+    SIGNATURE_MOVE = -24
+    MAKU = 666  # next stage on sato
+
+
+class WeaponAttackEffectEnum(Enum):
+    ICE = 1
+    DOUBLE_STRIKE = 2
+    SHOCKWAVE = 3
+    POISON = 4
+    PERFECT_STRIKE = 5
+    CURSE = 6
+
+
+class WeaponTileEffectEnum(Enum):
+    IMMEDIATE = 1

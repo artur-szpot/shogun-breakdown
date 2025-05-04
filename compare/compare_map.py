@@ -1,9 +1,8 @@
-from enums import LogLevel
 from history.history import History
+from logger import logger
 
 
-def entered_map(history: History, log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print("== ENTERED MAP JOURNEY ==")
-        print()
+def entered_map(history: History) -> History:
+    logger.detail_info("== ENTERED MAP JOURNEY ==")
+    logger.line()
     return history

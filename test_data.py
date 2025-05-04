@@ -8,7 +8,10 @@ from constants import SKILLS, HERO, FACING, SPECIAL_MOVE_COOLDOWN, MAX_HP, ENTIT
     SHOP_DATA, SHOP_ROOM, RIGHT_SHOP_TYPE, LEFT_SHOP_TYPE, FREE_POTION, ALREADY_UPGRADED, SHOP_ITEMS_SALE, \
     SHOP_ITEM_NAMES, MAP_SELECTION, VERSION, RUN_NUMBER, RUN_IN_PROGRESS, NAME, ATTACK_QUEUE, DECK, POTIONS, \
     COMBAT_ROOM, ENEMIES, PICKUP_LOCATIONS, PICKUPS, UNTIL_NEXT_WAVE, WAVE_NUMBER, PATTERN_INDEX, ELITE_TYPE, \
-    FIRST_TURN, ENEMY_TILE_EFFECT, TILE_TO_PLAY, PREVIOUS_ACTION, ACTION, ENEMY
+    FIRST_TURN, ENEMY_TILE_EFFECT, TILE_TO_PLAY, PREVIOUS_ACTION, ACTION, ENEMY, CURRENT_LOCATION, MAP_SAVE, \
+    CURRENT_LOCATION_NAME, UNCOVERED_LOCATIONS, PROGRESSION_DATA, PROGRESSION, CORRUPTED_BOSS_SECTORS, ROOM_VARIANT, \
+    SHOP_COMPONENT
+from logger import logger
 
 
 def is_empty_dict(source: Dict) -> Tuple[bool, Dict]:
@@ -110,9 +113,13 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[COMBAT_ROOM][UNTIL_NEXT_WAVE]
     del raw_data[PICKUPS]
     del raw_data[PICKUP_LOCATIONS]
+    del raw_data[PROGRESSION_DATA][PROGRESSION]
+    del raw_data[PROGRESSION_DATA][ROOM_VARIANT]
+    del raw_data[PROGRESSION_DATA][CORRUPTED_BOSS_SECTORS]
 
     # Other
     del raw_data[MAP_SELECTION]  # which game phase it is
+    del raw_data[MAP_SAVE][CURRENT_LOCATION]  # where we are
 
     # Remove purposely ignored data
     del raw_data[HERO][NAME]  # taken from enum
@@ -122,16 +129,14 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[SHOP_ROOM][REWARD][EXHAUSTED]  # doesn't happen
     del raw_data[SHOP_ROOM][REWARD][TILE_REWARDS]  # never offered
     del raw_data[SHOP_ROOM][SHOP_DATA][FREE_POTION_ALREADY_GIVEN]  # not interesting
+    del raw_data[MAP_SAVE][CURRENT_LOCATION_NAME]  # mapped from other values
+    del raw_data[MAP_SAVE][UNCOVERED_LOCATIONS]  # not needed
 
     # Remove temporarily ignored data # TODO: actually use all of it
-
-    del raw_data["mapSaveData"]  # can extract which room we're currently in; can construct run map from shopComponent
-    del raw_data["progressionSaveData"]  # will be useful to extract which room we're in
-    # iRoomInProgress = 1 when in rewards state
-    # 2 when in second part of the room
+    del raw_data[MAP_SAVE][SHOP_COMPONENT]  # will be used to constrcut whole map in history
 
     # Print what's left
     is_empty, whats_left = is_empty_dict(raw_data)
     if not is_empty:
-        print(json.dumps(whats_left, indent=2))
+        logger.debug_error(json.dumps(whats_left, indent=2))
         raise ValueError("Unused data detected in the save file")

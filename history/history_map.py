@@ -1,4 +1,4 @@
-from data.snapshot import Snapshot
+from data.snapshot.snapshot import Snapshot
 
 
 class MapHistory:

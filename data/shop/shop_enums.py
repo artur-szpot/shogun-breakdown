@@ -1,0 +1,39 @@
+from enum import Enum
+
+
+class ShopServiceEnum(Enum):
+    REROLL_FOR_HP = 0
+    MONEY_FOR_HP = 1
+    FULL_HEAL_FOR_SKULLS = 2
+    MONEY_FOR_SKULLS = 3
+
+
+class ShopType(Enum):
+    WARRING = 0
+    COMBO = 1
+    DANCER = 2
+    GUARDING = 3
+    DAMAGE = 4
+    COOLDOWN = 5
+    SLOT = 6
+    SACRIFICE = 7
+    ENCHANT = 8
+    MOONLIT_PORT = 9
+    WARRIORS_GAMBLE = 10
+
+
+class ShopEnum(Enum):
+    BAMBOO_GROVE_UP = 11
+    BAMBOO_GROVE_DOWN = 12
+    BEFORE_MOONLIT_PORT_UP = 31
+    BEFORE_MOONLIT_PORT_CENTER = 32
+    BEFORE_MOONLIT_PORT_DOWN = 33
+    MOONLIT_PORT = 51
+    SPIRIT_GATEWAY_UP = 61
+    SPIRIT_GATEWAY_DOWN = 62
+    FORSAKEN_LANDS_UP = 71
+    FORSAKEN_LANDS_DOWN = 72
+    HIDEYOSHI = 99
+    NOBUNAGA = 109
+    IEIASU = 119
+    SHOGUN = 129

@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from constants import SKILL_LEVELS, SKILLS
-from enums import SkillEnum
+from data.skill.skill_enums import SkillEnum
 
 
 class Skill:

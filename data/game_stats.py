@@ -2,7 +2,8 @@ from typing import Dict
 
 from constants import RUN_STATS, HITS, FRIENDLY_KILLS, HEAL_PICKUPS, POTION_PICKUPS, SCROLL_PICKUPS, \
     COMBAT_ROOMS_CLEARED, COMBOS, TURN_AROUNDS, TIME, COINS, TURNS, NEW_TILES_PICKED, CONSUMABLES_USED, DAY, VERSION
-from data.prediction_error import PredictionError
+from data.snapshot.prediction_error import PredictionError
+from logger import logger
 
 
 class GameStats:
@@ -127,17 +128,19 @@ class GameStats:
         if self.coins != other.coins:
             raise PredictionError(f"wrong number of coins")
         if self.combos != other.combos:
-            raise PredictionError(f"wrong number of turn combos")
+            raise PredictionError(f"wrong number of combos self {self.combos} other {other.combos}")
         if self.turns != other.turns:
             raise PredictionError(f"wrong number of turns")
         if self.combat_rooms_cleared != other.combat_rooms_cleared:
             raise PredictionError(f"wrong number of rooms cleared")
         if self.scroll_pickups != other.scroll_pickups:
-            raise PredictionError(f"wrong number of scroll pickups")
+            raise PredictionError(
+                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
         if self.potion_pickups != other.potion_pickups:
-            raise PredictionError(f"wrong number of potion pickups")
+            raise PredictionError(
+                f"wrong number of potion pickups self {self.potion_pickups} other {other.potion_pickups}")
         if self.heal_pickups != other.heal_pickups:
-            raise PredictionError(f"wrong number of heal pickups")
+            raise PredictionError(f"wrong number of heal pickups self {self.heal_pickups} other {other.heal_pickups}")
         if self.friendly_kills != other.friendly_kills:
             raise PredictionError(f"wrong number of friendly kills")
         if self.hits != other.hits:
@@ -145,3 +148,88 @@ class GameStats:
         if self.consumables_used != other.consumables_used:
             raise PredictionError(f"wrong number of consumables used")
         return True
+
+    def is_good_prediction(self, other, new_potions: int, debug: bool = False):
+        result = self.turn_arounds == other.turn_arounds \
+                   and self.coins == other.coins \
+                   and self.combos == other.combos \
+                   and self.turns == other.turns \
+                   and self.combat_rooms_cleared == other.combat_rooms_cleared \
+                   and self.scroll_pickups <= other.scroll_pickups + new_potions \
+                   and self.potion_pickups <= other.potion_pickups + new_potions \
+                   and self.heal_pickups <= other.heal_pickups + new_potions \
+                   and self.scroll_pickups + self.potion_pickups + self.heal_pickups <= \
+                   other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions \
+                   and self.friendly_kills == other.friendly_kills \
+                   and self.hits == other.hits \
+                   and self.consumables_used == other.consumables_used
+        if not debug:
+            return  result
+        if self.turn_arounds != other.turn_arounds:
+            raise PredictionError(f"wrong number of turn arounds self {self.turn_arounds} other {other.turn_arounds}")
+        if self.coins != other.coins:
+            raise PredictionError(f"wrong number of coins self {self.coins} other {other.coins}")
+        if self.combos != other.combos:
+            raise PredictionError(f"wrong number of combos self {self.combos} other {other.combos}")
+        if self.turns != other.turns:
+            raise PredictionError(f"wrong number of turns self {self.turns} other {other.turns}")
+        if self.combat_rooms_cleared != other.combat_rooms_cleared:
+            raise PredictionError(
+                f"wrong number of rooms cleared self {self.combat_rooms_cleared} other {other.combat_rooms_cleared}")
+        if self.scroll_pickups > other.scroll_pickups + new_potions:
+            raise PredictionError(
+                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
+        if self.potion_pickups > other.potion_pickups + new_potions:
+            raise PredictionError(
+                f"wrong number of potion pickups self {self.potion_pickups} other {other.potion_pickups}")
+        if self.heal_pickups > other.heal_pickups + new_potions:
+            raise PredictionError(f"wrong number of heal pickups self {self.heal_pickups} other {other.heal_pickups}")
+        if self.scroll_pickups + self.potion_pickups + self.heal_pickups > \
+                other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions:
+            raise PredictionError(f"wrong number of total pickups "
+                                  f"self {self.scroll_pickups + self.potion_pickups + self.heal_pickups} "
+                                  f"other {other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions}")
+        if self.friendly_kills != other.friendly_kills:
+            raise PredictionError(
+                f"wrong number of friendly kills self {self.friendly_kills} other {other.friendly_kills}")
+        if self.hits != other.hits:
+            raise PredictionError(f"wrong number of hits self {self.hits} other {other.hits}")
+        if self.consumables_used != other.consumables_used:
+            raise PredictionError(
+                f"wrong number of consumables used self {self.consumables_used} other {other.consumables_used}")
+        if not result:
+            raise PredictionError("Unchecked value is still wrong")
+        return result
+
+    def diff(self, other, new_potions: int):
+        if self.turn_arounds != other.turn_arounds:
+            logger.queue_debug_error(
+                f"wrong number of turn arounds self {self.turn_arounds} other {other.turn_arounds}")
+        if self.coins != other.coins:
+            logger.queue_debug_error(f"wrong number of coins")
+        if self.combos != other.combos:
+            logger.queue_debug_error(f"wrong number of combos self {self.combos} other {other.combos}")
+        if self.turns != other.turns:
+            logger.queue_debug_error(f"wrong number of turns")
+        if self.combat_rooms_cleared != other.combat_rooms_cleared:
+            logger.queue_debug_error(f"wrong number of rooms cleared")
+        if self.scroll_pickups > other.scroll_pickups + new_potions:
+            logger.queue_debug_error(
+                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
+        if self.potion_pickups > other.potion_pickups + new_potions:
+            logger.queue_debug_error(
+                f"wrong number of potion pickups self {self.potion_pickups} other {other.potion_pickups}")
+        if self.heal_pickups > other.heal_pickups + new_potions:
+            logger.queue_debug_error(
+                f"wrong number of heal pickups self {self.heal_pickups} other {other.heal_pickups}")
+        if self.scroll_pickups + self.potion_pickups + self.heal_pickups > \
+                other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions:
+            logger.queue_debug_error(f"wrong number of total pickups "
+                                     f"self {self.scroll_pickups + self.potion_pickups + self.heal_pickups} "
+                                     f"other {other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions}")
+        if self.friendly_kills != other.friendly_kills:
+            logger.queue_debug_error(f"wrong number of friendly kills")
+        if self.hits != other.hits:
+            logger.queue_debug_error(f"wrong number of hits self {self.hits} other {other.hits}")
+        if self.consumables_used != other.consumables_used:
+            logger.queue_debug_error(f"wrong number of consumables used")

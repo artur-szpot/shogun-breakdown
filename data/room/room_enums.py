@@ -1,0 +1,49 @@
+from enum import Enum
+
+
+class PickupEnum(Enum):
+    ANY = -1  # Allows setting predictions
+    GOLD = 0
+    EDAMAME_BREW = 100
+    COOL_UP = 101
+    KAMI_BREW = 102
+    LUCKY_DIE = 103
+    MASS_CURSE = 200
+    MASS_ICE = 201
+    MASS_POISON = 202
+    # ARTIFACT: 203
+    RAIN_OF_MIRRORS = 204
+
+
+class RoomEnum(Enum):
+    BAMBOO_GROVE = 10
+    WHISPERING_CAVES = 20
+    HIBIKU_WASTELANDS = 30
+    MOONLIT_PORT = 50
+    SPIRIT_GATEWAY = 60
+    FORSAKEN_GROUNDS = 70
+    HOT_SPRINGS = 80
+    THEATRE_OF_SHADOWS = 90
+    HIDEYOSHI = 100
+    NOBUNAGA = 110
+    IEIASU = 120
+    SHOGUN = 130
+
+
+class WeaponUpgradesEnum(Enum):
+    DAMAGE_WITH_CD = 100
+    DAMAGE = 101
+    COOLDOWN_1 = 102
+    COOLDOWN_2 = 103
+    COOLDOWN_4_FOR_DAMAGE = 104
+    DAMAGE_2_FOR_3_COOLDOWN = 105
+    ICE = 201
+    POISON = 202
+    DOUBLE_STRIKE = 203
+    PERFECT_STRIKE = 204
+    CURSE = 205
+    IMMEDIATE = 300
+    SACRIFICE_TILE = 400
+    WARRIORS_GAMBLE = 401
+    PLUS_SLOT = 500
+    PLUS_SLOT_MINUS_COOLDOWN = 501

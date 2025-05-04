@@ -1,7 +1,9 @@
 from typing import List, Dict
 
 from constants import REWARD, REWARD_ROOM, TILE_UPGRADE, TILE_REWARDS, EXHAUSTED, REROLL_PRICE, IN_PROGRESS
-from data.weapon import Weapon
+from data.mappers import upgrade_name_mapper
+from data.room.room_enums import WeaponUpgradesEnum
+from data.weapon.weapon import Weapon
 
 
 class RewardRoom:
@@ -35,3 +37,8 @@ class RewardRoom:
             available_tiles=available_tiles,
             available_upgrade=available_upgrade,
         )
+
+    def pretty_print_reward(self):
+        if self.available_upgrade == 0:
+            return ' or '.join(w.pretty_print() for w in self.available_tiles)
+        return f"Upgrade {upgrade_name_mapper[WeaponUpgradesEnum(self.available_upgrade)]}"

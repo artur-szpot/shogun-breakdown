@@ -1,6 +1,6 @@
 from typing import List
 
-from data.snapshot import Snapshot
+from data.snapshot.snapshot import Snapshot
 from history.history_battle import BattleHistory
 from history.history_deck import DeckHistory
 from history.history_gold import GoldHistory
@@ -29,4 +29,4 @@ class History:
         self.map = MapHistory(first_snapshot)
         self.potions = PotionHistory(first_snapshot)
         self.simulations = []
-        self.board_size = 7  # TODO first_snapshot.hero.position.cell * 2 + 1
+        self.board_size = first_snapshot.room.hero.position.cell * 2 + 1

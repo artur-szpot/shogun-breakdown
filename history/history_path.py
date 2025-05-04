@@ -1,6 +1,7 @@
 from typing import List
 
-from enums import RoomEnum, ShopEnum
+from data.room.room_enums import RoomEnum
+from data.shop.shop_enums import ShopEnum
 
 
 class PathHistory:

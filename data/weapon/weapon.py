@@ -3,8 +3,8 @@ from typing import Dict, Optional
 from constants import WEAPON_TYPE, MAX_LEVEL, LEVEL, BASE_STRENGTH, STRENGTH, COOLDOWN_CHARGE, COOLDOWN, \
     WEAPON_TILE_EFFECT, WEAPON_ATTACK_EFFECT
 from data.mappers import weapon_mapper, weapon_attack_effect_mapper
-from data.prediction_error import PredictionError
-from enums import WeaponEnum, WeaponAttackEffectEnum, WeaponTileEffectEnum
+from data.snapshot.prediction_error import PredictionError
+from data.weapon.weapon_enums import WeaponAttackEffectEnum, WeaponTileEffectEnum, WeaponEnum
 
 
 class Weapon:
@@ -39,9 +39,45 @@ class Weapon:
         self.tile_effect = tile_effect
 
     @staticmethod
+    def corrupted_explosion():
+        return Weapon(
+            weapon_type=WeaponEnum.CORRUPTED_EXPLOSION,
+            cooldown=0,
+            cooldown_charge=0,
+            strength=1,
+            base_strength=1,
+            level=0,
+            max_level=0,
+        )
+
+    @staticmethod
+    def trap(stength: int):
+        return Weapon(
+            weapon_type=WeaponEnum.TRAP,
+            cooldown=0,
+            cooldown_charge=0,
+            strength=stength,
+            base_strength=stength,
+            level=0,
+            max_level=0,
+        )
+
+    @staticmethod
     def shock():
         return Weapon(
             weapon_type=WeaponEnum.SHOCK,
+            cooldown=0,
+            cooldown_charge=0,
+            strength=1,
+            base_strength=1,
+            level=0,
+            max_level=0,
+        )
+
+    @staticmethod
+    def poison_tick():
+        return Weapon(
+            weapon_type=WeaponEnum.POISON_TICK,
             cooldown=0,
             cooldown_charge=0,
             strength=1,
@@ -121,12 +157,19 @@ class Weapon:
         return prefix + (" " if prefix else "") + name
 
     def short_print(self) -> str:
+        if self.strength == -1:
+            return self.print_name() + f" ({self.cooldown})"
         return self.print_name() + f" ({self.strength},{self.cooldown})"
 
     def pretty_print(self) -> str:
+        if self.strength == -1:
+            return self.print_name() + f" (cooldown {self.cooldown})"
         return self.print_name() + f" (power {self.strength}, cooldown {self.cooldown})"
 
     def debug_print(self) -> str:
+        if self.strength == -1:
+            return self.print_name() + f"{self.cooldown_charge}/{self.cooldown}, " \
+                                       f"{self.level}/{self.max_level})"
         return self.print_name() + f" ({self.strength}({self.base_strength}), " \
                                    f"{self.cooldown_charge}/{self.cooldown}, " \
                                    f"{self.level}/{self.max_level})"
@@ -251,3 +294,12 @@ class Weapon:
 
     def use(self):
         self.cooldown_charge = 0
+
+    def is_shocking(self):
+        return self.attack_effect is not None and self.attack_effect == WeaponAttackEffectEnum.SHOCKWAVE
+
+    def is_immediate(self):
+        return self.tile_effect is not None and self.tile_effect == WeaponTileEffectEnum.IMMEDIATE
+
+    def is_double_strike(self):
+        return self.attack_effect is not None and self.attack_effect == WeaponAttackEffectEnum.DOUBLE_STRIKE

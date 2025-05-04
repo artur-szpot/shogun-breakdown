@@ -1,6 +1,7 @@
 from typing import List
 
-from enums import SkillEnum, ShopEnum
+from data.shop.shop_enums import ShopEnum
+from data.skill.skill_enums import SkillEnum
 
 
 class SkillHistory:

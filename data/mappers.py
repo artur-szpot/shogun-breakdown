@@ -1,7 +1,11 @@
-from enums import WeaponEnum, SkillEnum, WeaponAttackEffectEnum, WeaponTileEffectEnum, RoomEnum, ShopEnum, \
-    PickupEnum, EnemyEnum, EnemyEliteEnum, HeroEnum
+from data.room.room_enums import RoomEnum, WeaponUpgradesEnum, PickupEnum
+from data.shop.shop_enums import ShopEnum
+from data.skill.skill_enums import SkillEnum
+from data.weapon.weapon_enums import WeaponTileEffectEnum, WeaponAttackEffectEnum, WeaponEnum
 
 weapon_mapper = {
+    WeaponEnum.PUSH: "PUSH",
+    WeaponEnum.STOP: "STOP",
     WeaponEnum.SPEAR: "Spear",
     WeaponEnum.LIGHTINING: "Lightning",
     WeaponEnum.TWIN_TESSEN: "Twin Tessen",
@@ -36,6 +40,7 @@ weapon_mapper = {
     WeaponEnum.THORNS: "Thorns",
     WeaponEnum.SHADOW_DASH: "Shadow Dash",
     WeaponEnum.BACK_CHARGE: "Back Charge",
+    WeaponEnum.BACK_CHARGE_ALT: "Back Charge",
     WeaponEnum.BACK_SMOKE_BOMB: "Back Smoke Bomb",
     WeaponEnum.CURSE: "Curse",
     WeaponEnum.SHARP_TURN: "Sharp Turn",
@@ -48,10 +53,11 @@ weapon_mapper = {
     WeaponEnum.CORRUPTED_WAVE_LTR: "Corrupted Wave",
     WeaponEnum.CORRUPTED_WAVE_RTL: "Corrupted Wave",
     WeaponEnum.CORRUPTED_EXPLOSION: "Corrupted Explosion",
-    WeaponEnum.KILL_SUMMONS: "Kill All Summons",
     WeaponEnum.VOLLEY: "Volley",
     WeaponEnum.COPYCAT_MIRROR: "Copycat Mirror",
     WeaponEnum.CORRUPTED_BARRAGE: "Corrupted Barrage",
+    WeaponEnum.SHIELD_SELF: "Shield Allied",
+    WeaponEnum.SHIELD_ALLY: "Shield",
 }
 
 skill_mapper = {
@@ -107,18 +113,35 @@ weapon_tile_effect_mapper = {
 }
 
 pickup_name_mapper = {
+    PickupEnum.ANY: "Anything",
     PickupEnum.GOLD: "Coin",
     PickupEnum.EDAMAME_BREW: "Edamame Brew",
     PickupEnum.COOL_UP: "Cool Up",
     PickupEnum.KAMI_BREW: "Kami Brew",
+    PickupEnum.LUCKY_DIE: "Lucky Die",
     PickupEnum.MASS_CURSE: "Mass Curse",
     PickupEnum.MASS_ICE: "Mass Ice",
     PickupEnum.MASS_POISON: "Mass Poison",
     PickupEnum.RAIN_OF_MIRRORS: "Rain of Mirrors",
 }
 
-upgrades_mapper = {
-    200: "Was it shockwave?"
+upgrade_name_mapper = {
+    WeaponUpgradesEnum.COOLDOWN_2: "-2 Cooldown",
+    WeaponUpgradesEnum.COOLDOWN_1: "-1 Cooldown",
+    WeaponUpgradesEnum.DAMAGE: "+1 Damage",
+    WeaponUpgradesEnum.DAMAGE_WITH_CD: "+1 Damage, +1 Cooldown",
+    WeaponUpgradesEnum.COOLDOWN_4_FOR_DAMAGE: "-1 Damage, -4 Cooldown",
+    WeaponUpgradesEnum.IMMEDIATE: "Free To Play",
+    WeaponUpgradesEnum.POISON: "Poison",
+    WeaponUpgradesEnum.CURSE: "Curse",
+    WeaponUpgradesEnum.ICE: "Ice",
+    WeaponUpgradesEnum.DOUBLE_STRIKE: "Double Strike",
+    WeaponUpgradesEnum.SACRIFICE_TILE: "Sacrifice Tile",
+    WeaponUpgradesEnum.PERFECT_STRIKE: "Perfect Strike",
+    WeaponUpgradesEnum.PLUS_SLOT: "+1 Upgrade Slot",
+    WeaponUpgradesEnum.PLUS_SLOT_MINUS_COOLDOWN: "+1 Upgrade Slot, -1 Cooldown",
+    WeaponUpgradesEnum.DAMAGE_2_FOR_3_COOLDOWN: "+2 Damage, +3 Cooldown",
+    WeaponUpgradesEnum.WARRIORS_GAMBLE: "Warrior's Gamble",
 }
 
 room_mapper = {
@@ -135,9 +158,24 @@ room_mapper = {
     "shogun-combat-1": RoomEnum.SHOGUN,
 }
 
+room_number_mapper = {
+    RoomEnum.BAMBOO_GROVE: 1,
+    RoomEnum.WHISPERING_CAVES: 2,
+    RoomEnum.HIBIKU_WASTELANDS: 2,
+    RoomEnum.MOONLIT_PORT: 3,
+    RoomEnum.SPIRIT_GATEWAY: 4,
+    RoomEnum.HOT_SPRINGS: 5,
+    RoomEnum.FORSAKEN_GROUNDS: 4,
+    RoomEnum.THEATRE_OF_SHADOWS: 5,
+    RoomEnum.HIDEYOSHI: 6,
+    RoomEnum.NOBUNAGA: 6,
+    RoomEnum.IEIASU: 6,
+    RoomEnum.SHOGUN: 7,
+}
+
 boss_room_mapper = {
     RoomEnum.BAMBOO_GROVE: {4: True},
-    RoomEnum.WHISPERING_CAVES: {6: True},
+    RoomEnum.WHISPERING_CAVES: {4: True},
     RoomEnum.HIBIKU_WASTELANDS: {4: True},
     RoomEnum.MOONLIT_PORT: {6: True},
     RoomEnum.SPIRIT_GATEWAY: {6: True},
@@ -169,7 +207,7 @@ room_corrupted_boss_mapper = {
     RoomEnum.BAMBOO_GROVE: "Corrupted Daisuke",
     RoomEnum.HIBIKU_WASTELANDS: "Corrupted Baru",
     RoomEnum.MOONLIT_PORT: "Corrupted Twins",
-}
+}  # TODO is this still used?
 
 shop_mapper = {
     "green-shop-1A": ShopEnum.BAMBOO_GROVE_UP,
@@ -203,73 +241,4 @@ shop_name_mapper = {
     ShopEnum.NOBUNAGA: "Shop before Nobunaga's Fortress",
     ShopEnum.IEIASU: "Shop before Ieiasu's Gardens",
     ShopEnum.SHOGUN: "Shop before The Shogun's Castle",
-}
-
-hero_name_mapper = {
-    HeroEnum.RONIN: "The Ronin",
-    HeroEnum.WANDERER: "The Wanderer",
-    HeroEnum.SHADOW: "The Shadow",
-    HeroEnum.JUJITSUKA: "The Jujitsuka",
-    HeroEnum.CHAIN_MASTER: "The Chain Master",
-}
-
-enemy_name_mapper = {
-    EnemyEnum.SPIKE_CHARGER: "Spike Charger",
-    EnemyEnum.ASHIGARU: "Ashigaru",
-    EnemyEnum.ASHIGARU_ARCHER: "Ashigaru Archer",
-    EnemyEnum.GUARDIAN: "Guardian",
-    EnemyEnum.TWIN_TACHI: "Twin Tachi",
-    EnemyEnum.YARI_MASTER: "Yari Master",
-    EnemyEnum.YUMI_SNIPER: "Yumi Sniper",
-    EnemyEnum.WARDEN: "Warden",
-    EnemyEnum.STRIDER: "Strider",
-    EnemyEnum.BLIGHT_CHARGER: "Blight Charger",
-    EnemyEnum.BARRICADE: "Barricade",
-    EnemyEnum.KABUKAI: "Kabukai",
-    EnemyEnum.SHINOBI: "Shinobi",
-    EnemyEnum.GRAPPLER: "Grappler",
-    EnemyEnum.SUMMONER: "Summoner",
-    EnemyEnum.THORNS: "Thorns",
-    EnemyEnum.SHADOW_CHARGER: "Shadow Charger",
-    EnemyEnum.CORRUPTED_PROGENY: "Corrupted Progeny",
-    EnemyEnum.THE_TWINS: "The Twins",
-    EnemyEnum.NOBUNAGA: "Nobunaga the Wicked",
-    EnemyEnum.FUMIKO: "Fumiko the Fallen",
-    EnemyEnum.THE_SHOGUN: "The Shogun",
-    EnemyEnum.THE_STATUE: "The Statue",
-    EnemyEnum.THE_SHOGUN_PHASE_TWO: "The Shogun",
-    EnemyEnum.REI: "Rei",
-    EnemyEnum.IWAO: "Iwao the Impaler",
-    EnemyEnum.BARU: "Baru the Barricader",
-    EnemyEnum.KOWA: "Kowa the Coward",
-    EnemyEnum.SATO: "Sato the Stagemaster",
-    EnemyEnum.HIDEYOSHI: "Hideyoshi the Cunning",
-    EnemyEnum.IEIASU:  "Ieiasu the Cruel",
-    EnemyEnum.CORRUPTED_REI: "Corrupted Rei",
-    # EnemyEnum.CORRUPTED_DAISUKE: "Corrupted Daisuke",
-    EnemyEnum.CORRUPTED_BARU: "Corrupted Baru",
-}
-
-room_boss_mapper = {
-    RoomEnum.BAMBOO_GROVE: enemy_name_mapper[EnemyEnum.REI],
-    RoomEnum.WHISPERING_CAVES: enemy_name_mapper[EnemyEnum.IWAO],
-    RoomEnum.HIBIKU_WASTELANDS: enemy_name_mapper[EnemyEnum.BARU],
-    RoomEnum.MOONLIT_PORT: enemy_name_mapper[EnemyEnum.THE_TWINS],
-    RoomEnum.SPIRIT_GATEWAY: enemy_name_mapper[EnemyEnum.THE_STATUE],
-    RoomEnum.HOT_SPRINGS: enemy_name_mapper[EnemyEnum.KOWA],
-    RoomEnum.FORSAKEN_GROUNDS: enemy_name_mapper[EnemyEnum.FUMIKO],
-    RoomEnum.THEATRE_OF_SHADOWS: enemy_name_mapper[EnemyEnum.SATO],
-    RoomEnum.HIDEYOSHI: enemy_name_mapper[EnemyEnum.HIDEYOSHI],
-    RoomEnum.NOBUNAGA: enemy_name_mapper[EnemyEnum.NOBUNAGA],
-    RoomEnum.IEIASU:enemy_name_mapper[EnemyEnum.IEIASU],
-    RoomEnum.SHOGUN: enemy_name_mapper[EnemyEnum.THE_SHOGUN],
-}
-
-enemy_elite_name_mapper = {
-    EnemyEliteEnum.NOT_ELITE: "",
-    EnemyEliteEnum.REACTIVE_SHIELD: "Reactive Shield",
-    EnemyEliteEnum.DOUBLE_STRIKER: "Double Striker",
-    EnemyEliteEnum.HEAVY: "Heavy",
-    EnemyEliteEnum.QUICK: "Quick",
-    EnemyEliteEnum.CORRUPTED: "Corrupted",
 }

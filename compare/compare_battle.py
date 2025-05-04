@@ -1,11 +1,15 @@
-from typing import Optional
+from typing import Optional, List
 
-from data.mappers import pickup_name_mapper
-from data.prediction_error import PredictionError
-from data.snapshot import Snapshot
-from data.weapon import Weapon
-from enums import LogLevel, WeaponTileEffectEnum
+from data.other_enums import GamePhase
+from data.snapshot.permutate_queues import permutate_possible_attack_queues
+from data.snapshot.prediction_error import PredictionError
+from data.snapshot.predictions import Predictions
+from data.snapshot.simulation import Simulation
+from data.snapshot.snapshot import Snapshot
+from data.snapshot.validate_simulation import is_good_prediction
+from data.weapon.weapon import Weapon
 from history.history import History
+from logger import logger
 
 
 def pretty_print_time_part(part: int) -> str:
@@ -22,80 +26,96 @@ def pretty_print_time(time: int) -> str:
     return f"{pretty_print_time_part(hours)}:{result}"
 
 
-def run_started(history: History, new_snapshot: Snapshot, log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print("== RUN STARTED ==")
-        print()
-    return battle_started(history, new_snapshot, new_snapshot, log_level)
+def run_started(history: History, new_snapshot: Snapshot) -> History:
+    logger.detail_info("== RUN STARTED ==")
+    logger.line()
+    return battle_started(history, new_snapshot, new_snapshot)
 
 
-def battle_started(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot,
-                   log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print()
-        if previous_snapshot is None:
-            print("== IN A BATTLE ==")
-        else:
-            print("== BATTLE STARTED ==")
-            history.board_size = new_snapshot.room.hero.position.cell * 2 + 1
-        print(f"== {new_snapshot.get_room()} ==")
-        print()
+def battle_started(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot) -> History:
+    logger.line()
+    if previous_snapshot is None:
+        logger.detail_info("== IN A BATTLE ==")
+    else:
+        logger.detail_info("== BATTLE STARTED ==")
+    logger.detail_info(f"== {new_snapshot.get_room()} ==")
+    logger.line()
     return history
 
 
-def battle_finished(history: History, previous_snapshot: Snapshot, log_level: LogLevel) -> History:
-    if log_level == LogLevel.DEBUG:
-        print()
-        print("== BATTLE WON ==")
-        print(f"== {previous_snapshot.get_room()} ==")
-        print(f"Turns taken: {'unknown'}")
-        print(f"Time taken: {'unknown'}")
-        print(f"Hits taken: {'unknown'}")
-        print(f"Potions used: {'unknown'}")
-        print(f"Combos: {'unknown'}")
-        print()
-    elif log_level == LogLevel.SPLITS:
-        print(f"== {previous_snapshot.get_room()} ==")
-        print(f"Turns taken: {'unknown'}")
-        print(f"Time taken: {'unknown'}")
-        print(f"Hits taken: {'unknown'}")
-        print(f"Potions used: {'unknown'}")
-        print(f"Combos: {'unknown'}")
-        print()
+def battle_finished(history: History, previous_snapshot: Snapshot) -> History:
+    logger.detail_success("")
+    logger.detail_success("== BATTLE WON ==")
+    logger.splits_success(f"== {previous_snapshot.get_room()} ==")
+    logger.splits_success(f"Turns taken: {'unknown'}")
+    logger.splits_success(f"Time taken: {'unknown'}")
+    logger.splits_success(f"Hits taken: {'unknown'}")
+    logger.splits_success(f"Potions used: {'unknown'}")
+    logger.splits_success(f"Combos: {'unknown'}")
+    logger.splits_success("")
     return history
 
 
-def test_simulation(simulation: Optional[Snapshot], new_snapshot: Snapshot, name: str = None,
-                    debug: bool = False) -> bool:
+class SimulationResults:
+    all_answers: List[str]
+    non_execute_answers: int
+    victory: bool
+
+    def __init__(self,
+                 all_answers: List[str] = None,
+                 non_execute_answers: int = 0,
+                 victory: bool = False
+                 ):
+        self.all_answers = all_answers or []
+        self.non_execute_answers = non_execute_answers
+        self.victory = victory
+
+    def add(self, other):
+        if other is None:
+            return
+        if len(other.all_answers):
+            self.all_answers.extend(other.all_answers)
+        self.non_execute_answers += other.non_execute_answers
+        if other.victory:
+            self.victory = True
+
+
+def test_simulation(simulation: Optional[Simulation], new_snapshot: Snapshot,
+                    previous_hero_cell: int, name: str, description: str) -> Optional[SimulationResults]:
     if simulation is None:
-        if debug:
-            print(f'Simulation "{name}": impossible')
-        return False
-    simulation.simulate_enemies()
-    try:
-        result = new_snapshot.is_good_prediction(simulation, debug)
-        if debug:
-            print(f'Simulation "{name}": {"correct!" if result else "wrong"}')
-        return result
-    except PredictionError as error:
-        if debug:
-            print(f'Simulation "{name}" error: {error}')
-        return False
+        logger.queue_debug_error(f'Simulation "{name}": impossible')
+        logger.queue_debug_error("")
+        return None
+
+    if simulation.predictions.enemies_cleared and new_snapshot.game_phase != GamePhase.BATTLE:
+        return SimulationResults(
+            all_answers=[description],
+            victory=True
+        )
+
+    enemy_attack_order = simulation.simulate_enemies(
+        previous_hero_cell=previous_hero_cell,
+    )
+    for order_name, simulated_order in enemy_attack_order.items():
+        simulated_order_name = "" if len(enemy_attack_order) == 1 else f" (order_name)"
+        try:
+            result = is_good_prediction(new_snapshot, simulated_order)
+            if result:
+                logger.queue_debug_success(f'Simulation "{name}"{simulated_order_name}: correct!')
+            else:
+                logger.queue_debug_warn(f'Simulation "{name}"{simulated_order_name}: wrong')
+            logger.queue_debug_success("")
+            return SimulationResults(
+                all_answers=[description] if result else None,
+                non_execute_answers=0 if name.startswith("execute") or not result else 1,
+            )
+        except PredictionError as error:
+            logger.queue_debug_error(f'Simulation "{name}{simulated_order_name}" error: {error}')
+            logger.queue_debug_error("")
+            return SimulationResults()
 
 
-class Scenario:
-    simulation: Snapshot
-    description: str
-    debug_name: str
-
-    def __init__(self, simulation: Snapshot, description: str, debug_name: str):
-        self.simulation = simulation
-        self.description = description
-        self.debug_name = debug_name
-
-
-def battle_update(history: History, previous_snapshot: Snapshot, new_snapshot: Snapshot,
-                  log_level: LogLevel) -> History:
+def battle_update(history: History, previous_snapshot: Snapshot, new_snapshot: Snapshot) -> History:
     if previous_snapshot.game_stats.turns == new_snapshot.game_stats.turns:
         # TODO still unclear why this happens
         return history
@@ -103,48 +123,127 @@ def battle_update(history: History, previous_snapshot: Snapshot, new_snapshot: S
     # WHAT TIME IS IT
     turns = new_snapshot.game_stats.turns
     time = new_snapshot.game_stats.time
-    if log_level == LogLevel.DEBUG:
-        print(f"TURN {turns}, TIME {pretty_print_time(time)}")
-        pickups = [f'{loc}: {", ".join(pickup_name_mapper[pp] for pp in pps)}' for loc, pps in
-                   new_snapshot.room.pickups.items()]
-        print(f"PICKUPS: {', '.join(pickups)}")
+    logger.detail_text("")
+    logger.detail_text(f"TURN {turns}, TIME {pretty_print_time(time)}")
+    # pickups = [f'{loc}: {", ".join(pickup_name_mapper[pp] for pp in pps)}' for loc, pps in
+    #            new_snapshot.room.pickups.items()]
+    # logger.debug_text(f"PICKUPS: {', '.join(pickups)}")
+    # logger.debug_text(f"PREV ENEMIES:")
+    # for index, enemy in enumerate(previous_snapshot.room.enemies):
+    #     logger.debug_text(f"{index}. {enemy.pretty_print()}")
+    # logger.debug_text(f"ENEMIES:")
+    # for index, enemy in enumerate(new_snapshot.room.enemies):
+    #     logger.debug_text(f"{index}. {enemy.pretty_print()}")
+    # logger.debug_text(f"BOARD SIZE: {new_snapshot.room.board_size}")
+    # logger.detail_text("")
 
     # LEFT TO COVER
-    # execute special
-    # execute queue
     # possibility of free turn around (and all other skills...)
 
-    permutated_attack_queues = previous_snapshot.permutate_possible_attack_queues()
+    # 0 cooldown tiles that pretend other actions:
+    # move right: charge/dash 1 step right to the end of the board
+    # move left: equivalent
+    # turn around: sharp turn with no enemies, mirror in the center
+    # wait: already muddled (e.g. remove and add back to queue); doesn't matter
+    # sig. move: safe, since it goes on non-zero cooldown
+    # ergo not too bad
+
+    # Account for switching the queue order.
+    permutated_attack_queues = permutate_possible_attack_queues(
+        attack_queue=previous_snapshot.room.hero.attack_queue,
+        hero_deck=previous_snapshot.hero_deck
+    )
     current_attack_queue = previous_snapshot.room.hero.attack_queue[:]
     possible_attack_queues = [current_attack_queue]
     for perm in permutated_attack_queues:
         if not Weapon.is_list_equal(current_attack_queue, perm):
             possible_attack_queues.append(perm)
+    predictions = Predictions(potential_hero_attack_queues=possible_attack_queues)
 
-    possible_scenarios = [
-        Scenario(
-            previous_snapshot.simulation_move_right(possible_attack_queues=possible_attack_queues,
-                                                    board_size=history.board_size),
-            "Hero has moved right", "move right"),
-        Scenario(previous_snapshot.simulation_move_left(possible_attack_queues=possible_attack_queues),
-                 "Hero has moved left", "move left"),
-        Scenario(previous_snapshot.simulation_turn_around(possible_attack_queues=possible_attack_queues),
-                 "Hero has turned around", "turn around"),
-        Scenario(previous_snapshot.simulation_wait(possible_attack_queues=possible_attack_queues),
-                 "Hero has waited a turn", "wait"),
-        Scenario(previous_snapshot.simulation_signature_move(possible_attack_queues=possible_attack_queues),
-                 "Hero has executed their signature move", "sig. move"),
-    ]
+    # Begin simulations.
+    results = SimulationResults()
 
-    for attack_queue in possible_attack_queues:
+    name = "move right"
+    description = "Hero has moved right"
+    logger.queue_debug_info(f'Start simulation "{name}"')
+    simulation = Simulation.simulation_move_right(previous_snapshot, predictions)
+    results.add(test_simulation(
+        simulation=simulation,
+        new_snapshot=new_snapshot,
+        previous_hero_cell=previous_snapshot.room.hero.position.cell,
+        name=name,
+        description=description
+    ))
+
+    name = "move left"
+    description = "Hero has moved left"
+    logger.queue_debug_info(f'Start simulation "{name}"')
+    simulation = Simulation.simulation_move_left(previous_snapshot, predictions)
+    results.add(test_simulation(
+        simulation=simulation,
+        new_snapshot=new_snapshot,
+        previous_hero_cell=previous_snapshot.room.hero.position.cell,
+        name=name,
+        description=description
+    ))
+
+    name = "turn around"
+    description = "Hero has turned around"
+    logger.queue_debug_info(f'Start simulation "{name}"')
+    simulation = Simulation.simulation_turn_around(previous_snapshot, predictions)
+    results.add(test_simulation(
+        simulation=simulation,
+        new_snapshot=new_snapshot,
+        previous_hero_cell=previous_snapshot.room.hero.position.cell,
+        name=name,
+        description=description
+    ))
+
+    name = "wait"
+    description = "Hero has waited a turn"
+    logger.queue_debug_info(f'Start simulation "{name}"')
+    simulation = Simulation.simulation_wait(previous_snapshot, predictions)
+    results.add(test_simulation(
+        simulation=simulation,
+        new_snapshot=new_snapshot,
+        previous_hero_cell=previous_snapshot.room.hero.position.cell,
+        name=name,
+        description=description
+    ))
+
+    name = "sig. move"
+    description = "Hero has executed their signature move"
+    logger.queue_debug_info(f'Start simulation "{name}"')
+    simulation = Simulation.simulation_signature_move(previous_snapshot, predictions)
+    results.add(test_simulation(
+        simulation=simulation,
+        new_snapshot=new_snapshot,
+        previous_hero_cell=previous_snapshot.room.hero.position.cell,
+        name=name,
+        description=description
+    ))
+
+    for attack_queue in [possible_attack_queues[0]]:
         if len(attack_queue):
-            possible_scenarios.append(Scenario(
-                previous_snapshot.simulation_execute_queue(attack_queue, history.board_size),
-                "Hero has executed the queue", "execute"))
+            name = f"execute {Weapon.short_print_list(attack_queue)}"
+            description = f"Hero has executed the queue: {Weapon.short_print_list(attack_queue)}"
+            logger.queue_debug_info(f'Start simulation "{name}"')
+            simulation = Simulation.simulation_execute_queue(
+                snapshot=previous_snapshot,
+                attack_queue=attack_queue,
+                previous_hero_cell=previous_snapshot.room.hero.position.cell,
+            )
+            results.add(test_simulation(
+                simulation=simulation,
+                new_snapshot=new_snapshot,
+                previous_hero_cell=previous_snapshot.room.hero.position.cell,
+                name=name,
+                description=description
+            ))
 
     for weapon in previous_snapshot.hero_deck:
-        if weapon.tile_effect is not None and weapon.tile_effect == WeaponTileEffectEnum.IMMEDIATE:
-            # Immediates are handled elsewhere.
+        # Immediates are handled elsewhere.
+        if weapon.is_immediate():
             continue
         is_in_queue = 0
         number_copies = 0
@@ -154,29 +253,38 @@ def battle_update(history: History, previous_snapshot: Snapshot, new_snapshot: S
         for potential in previous_snapshot.room.hero.attack_queue:
             if potential.is_equal(weapon):
                 is_in_queue += 1
-        print(f"weapon: {weapon.pretty_print()}")
-        print(f"number_copies: {number_copies}")
-        print(f"is_in_queue: {is_in_queue}")
         if is_in_queue < number_copies:
-            possible_scenarios.append(Scenario(previous_snapshot.simulation_adding_weapon_to_queue(weapon),
-                                               f"Hero has added {weapon.pretty_print()} to the queue",
-                                               f"add {weapon.debug_print()}"))
+            name = f"add {weapon.debug_print()}"
+            description = f"Hero has added {weapon.pretty_print()} to the queue"
+            logger.queue_debug_info(f'Start simulation "{name}"')
+            simulation = Simulation.simulation_adding_weapon_to_queue(previous_snapshot, weapon.clone())
+            results.add(test_simulation(
+                simulation=simulation,
+                new_snapshot=new_snapshot,
+                previous_hero_cell=previous_snapshot.room.hero.position.cell,
+                name=name,
+                description=description
+            ))
 
-    debug = True
-    found_the_answer = False
-    answer = None
-    for scenario in possible_scenarios:
-        result = test_simulation(scenario.simulation, new_snapshot, scenario.debug_name, debug)
-        if result:
-            if found_the_answer:
-                if scenario.debug_name != "execute":
-                    raise ValueError("More than one scenario found to be correct!")
-            answer = scenario.description
-            found_the_answer = True
-
-    if answer is None:
-        print("Correct scenario has not been found :(")
+    if not results.victory and results.non_execute_answers > 1:
+        logger.execute_queue()
+        logger.debug_error("More than one scenario found to be correct!")
+    elif not len(results.all_answers):
+        logger.execute_queue()
+        logger.debug_error("Correct scenario has not been found :(")
     else:
-        print(answer)
+        logger.clear_queue()
+        if results.victory:
+            if len(results.all_answers) > 1:
+                logger.debug_success(f"Battle won! Possible paths to victory: {len(results.all_answers)}")
+            else:
+                logger.debug_success(f"Battle won! Last move: {results.all_answers[0]}")
+        else:
+            logger.detail_text(results.all_answers[0])
 
     return history
+
+
+def battle_ended(history: History, previous_snapshot: Snapshot, new_snapshot: Snapshot) -> History:
+    # TODO!
+    return battle_update(history, previous_snapshot, new_snapshot)

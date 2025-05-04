@@ -1,46 +1,59 @@
 from typing import Optional
 
-from compare.compare_battle import battle_update, battle_started, run_started
+from compare.compare_battle import battle_update, battle_started, run_started, battle_ended
 from compare.compare_map import entered_map
 from compare.compare_reward import reward_update, entered_reward
 from compare.compare_shop import shop_update, entered_shop
-from data.snapshot import Snapshot
-from enums import GamePhase, LogLevel
+from data.snapshot.snapshot import Snapshot
+from data.other_enums import GamePhase
 from history.history import History
+from logger import logger
 
 
-def compare_snapshots(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot,
-                      log_level: LogLevel) -> History:
+def compare_snapshots(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot
+                      ) -> History:
     if new_snapshot.game_stats.turns == 0:
-        return run_started(history, new_snapshot, log_level)
+        return run_started(history, new_snapshot)
     elif previous_snapshot is None:
-        if log_level == LogLevel.DEBUG:
-            print('== Logging started in the middle of a run lacks many features. ==')
-            print()
+        logger.detail_info('== Logging started in the middle of a run lacks many features. ==')
+        logger.line()
 
     if previous_snapshot is None or previous_snapshot.game_phase != new_snapshot.game_phase:
+        if previous_snapshot is not None:
+            if previous_snapshot.game_phase == GamePhase.BATTLE:
+                history = battle_ended(history, previous_snapshot, new_snapshot)
+            if previous_snapshot.game_phase == GamePhase.BATTLE_REWARDS:
+                # history = reward_update(history, previous_snapshot, new_snapshot)
+                # Nothing here either # TODO unless potions...?
+                pass
+            if previous_snapshot.game_phase == GamePhase.MAP_JOURNEY:
+                # Nothing to get from here
+                pass
+            if previous_snapshot.game_phase == GamePhase.SHOP:
+                history = shop_update(history, previous_snapshot, new_snapshot)
+
         if new_snapshot.game_phase == GamePhase.BATTLE:
-            return battle_started(history, previous_snapshot, new_snapshot, log_level)
+            return battle_started(history, previous_snapshot, new_snapshot)
         if new_snapshot.game_phase == GamePhase.BATTLE_REWARDS:
-            if previous_snapshot is not None:
-                history = battle_update(history, previous_snapshot, new_snapshot, log_level)
-            return entered_reward(history, previous_snapshot, new_snapshot, log_level)
+            # if previous_snapshot is not None:
+            #     history = battle_ended(history, previous_snapshot, new_snapshot)
+            return entered_reward(history, previous_snapshot, new_snapshot)
         if new_snapshot.game_phase == GamePhase.MAP_JOURNEY:
-            return entered_map(history, log_level)
+            return entered_map(history)
         if new_snapshot.game_phase == GamePhase.SHOP:
-            return entered_shop(history, previous_snapshot, new_snapshot, log_level)
+            return entered_shop(history, previous_snapshot, new_snapshot)
 
     if previous_snapshot is None:
         return history
 
     if new_snapshot.game_phase == GamePhase.BATTLE:
-        return battle_update(history, previous_snapshot, new_snapshot, log_level)
+        return battle_update(history, previous_snapshot, new_snapshot)
     if new_snapshot.game_phase == GamePhase.BATTLE_REWARDS:
-        return reward_update(history, previous_snapshot, new_snapshot, log_level)
+        return reward_update(history, previous_snapshot, new_snapshot)
     if new_snapshot.game_phase == GamePhase.MAP_JOURNEY:
         # Should never happen, map only has one possible action
         return history
     if new_snapshot.game_phase == GamePhase.SHOP:
-        return shop_update(history, previous_snapshot, new_snapshot, log_level)
+        return shop_update(history, previous_snapshot, new_snapshot)
 
     raise ValueError("Unknown game state!")
