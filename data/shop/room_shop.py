@@ -142,8 +142,8 @@ class ShopRoom:
     def pretty_print_items(self) -> List[str]:
         return [item.pretty_print() for item in self.items]
 
-    def get_service_type(self) -> Optional[ShopServiceEnum]:
+    def get_service(self) -> Optional[ShopService]:
         for item in self.items:
             if isinstance(item, ShopService):
-                return item.service
+                return item
         return None

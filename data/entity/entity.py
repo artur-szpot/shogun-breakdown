@@ -50,6 +50,9 @@ class Entity:
     def is_hero(self) -> bool:
         return self.entity_type == EntityType.HERO
 
+    def is_thorns(self) -> bool:
+        return False
+
     def is_heavy(self) -> bool:
         return False
 
@@ -90,6 +93,13 @@ class Entity:
             self.position.died_in = self.position.cell
         return hits
 
+    def actual_heal(self, weapon: Weapon) -> None:
+        # Only happens when a boss hits itself with their corrupted wave.
+        logger.queue_debug_text(f"{self.get_name()} getting healed by {weapon.pretty_print()}")
+        strength = weapon.strength
+        if self.hp.hp < self.hp.max_hp:
+            self.hp.hp += strength
+
     def hit(self, weapon: Weapon, twin_target) -> int:
         hits = self.actual_hit(weapon)
         if weapon.attack_effect is not None:
@@ -114,6 +124,9 @@ class Entity:
         hits2 = self.hit_clone(weapon, twin_target)
         hits += hits2
         return hits
+
+    def boss_corruption_heal(self, weapon: Weapon) -> None:
+        self.actual_heal(weapon)
 
     def hit_clone(self, weapon: Weapon, twin_target) -> int:
         return 0

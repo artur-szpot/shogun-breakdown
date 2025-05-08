@@ -49,12 +49,13 @@ class Logger:
     last_continuous: bool = False
     indent: int = 0
     queue: List[Message]
-    log_level: LogType
+    log_levels: List[LogType]
 
     def __init__(self):
         """ Initialize the module. Required for Colorama. Called automatically. """
         init()
-        self.log_level = LogType.DEBUG
+        self.log_levels = [LogType.DEBUG, LogType.DETAIL]
+        # self.log_level = LogType.SPLITS
         self.queue = []
 
     def line(self) -> None:
@@ -62,7 +63,7 @@ class Logger:
 
     def nice_print(self, codes: List[MessageType], message: str) -> None:
         if MessageType.ERROR in codes:
-            color = Back.RED + Fore.BLACK
+            color = Back.RED + Fore.WHITE
         elif MessageType.WARN in codes:
             color = Back.YELLOW
             if MessageType.VARIABLE not in codes:
@@ -70,7 +71,7 @@ class Logger:
         elif MessageType.HELP in codes:
             color = Fore.YELLOW
         elif MessageType.INFO in codes:
-            color = Back.CYAN + Fore.BLACK
+            color = Back.CYAN + Fore.WHITE
         elif MessageType.SUCCESS in codes:
             color = Fore.GREEN
         else:
@@ -106,7 +107,7 @@ class Logger:
             highlighted = not highlighted
 
     def print_message(self, message: Message):
-        if message.log_type.value < self.log_level.value:
+        if message.log_type not in self.log_levels:
             return
         if message.message_type == MessageType.TEXT:
             print(message.text)

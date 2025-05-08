@@ -30,13 +30,13 @@ class EntityPosition:
             facing=self.facing,
         )
 
-    def is_equal(self, other, debug: str = None):
+    def is_equal(self, other, facing_matters: bool = True, debug: str = None):
         if not debug:
             return self.cell == other.cell and \
-                   self.facing == other.facing
+                   (not facing_matters or self.facing == other.facing)
         if self.cell != other.cell:
             raise PredictionError(f"wrong cell ({debug}) self: {self.cell} other: {other.cell}")
-        if self.facing != other.facing:
+        if facing_matters and self.facing != other.facing:
             raise PredictionError(f"wrong facing ({debug})")
         return True
 

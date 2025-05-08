@@ -10,6 +10,8 @@ class Predictions:
     summons: int
     enemies_cleared: bool
     new_potions: int
+    allow_more_coins: bool
+    allow_more_turn_arounds: bool
 
     def __init__(self,
                  potential_hero_attack_queues: List[List[Weapon]] = None,
@@ -18,6 +20,8 @@ class Predictions:
                  summons: int = 0,
                  enemies_cleared: bool = False,
                  new_potions: int = 0,
+                 allow_more_coins: bool = False,
+                 allow_more_turn_arounds: bool=False,
                  ):
         self.potential_hero_attack_queues = potential_hero_attack_queues or []
         self.potential_hero_decks = potential_hero_decks or []
@@ -25,6 +29,8 @@ class Predictions:
         self.summons = summons
         self.enemies_cleared = enemies_cleared
         self.new_potions = new_potions
+        self.allow_more_coins = allow_more_coins
+        self.allow_more_turn_arounds = allow_more_turn_arounds
 
     def clone(self):
         # The weapons in here won't be interacted with, so don't need cloning.
@@ -35,4 +41,6 @@ class Predictions:
             summons=self.summons,
             enemies_cleared=self.enemies_cleared,
             new_potions=self.new_potions,
+            allow_more_coins=self.allow_more_coins,
+            allow_more_turn_arounds=self.allow_more_turn_arounds,
         )

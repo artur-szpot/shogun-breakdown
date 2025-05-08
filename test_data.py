@@ -120,6 +120,7 @@ def test_data(raw_data: Dict) -> None:
     # Other
     del raw_data[MAP_SELECTION]  # which game phase it is
     del raw_data[MAP_SAVE][CURRENT_LOCATION]  # where we are
+    del raw_data[MAP_SAVE][SHOP_COMPONENT]  # used to constrcut whole map in history
 
     # Remove purposely ignored data
     del raw_data[HERO][NAME]  # taken from enum
@@ -131,9 +132,6 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[SHOP_ROOM][SHOP_DATA][FREE_POTION_ALREADY_GIVEN]  # not interesting
     del raw_data[MAP_SAVE][CURRENT_LOCATION_NAME]  # mapped from other values
     del raw_data[MAP_SAVE][UNCOVERED_LOCATIONS]  # not needed
-
-    # Remove temporarily ignored data # TODO: actually use all of it
-    del raw_data[MAP_SAVE][SHOP_COMPONENT]  # will be used to constrcut whole map in history
 
     # Print what's left
     is_empty, whats_left = is_empty_dict(raw_data)

@@ -1,0 +1,14 @@
+TO-DO CENTRAL
+
+fully flesh out enums
+capture history
+POTIONS :|
+room totals
+identify victory (lol (lol how easy with the prediction approach))
+pickup everything at battle end
+make sure combos and friendlies are correct at the end of battle too
+TODO: friendly kill only counts if attacker or direct target have been moved by hero
+# new theory: this only works if attacker/target have moved, in any way
+when is the deck chakram reset/upped?
+when shogun defeated, count all present for chakram and update room accordingly
+capture where in shogun fight we are

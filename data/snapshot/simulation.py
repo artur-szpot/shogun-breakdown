@@ -1,8 +1,9 @@
 from typing import List, Optional, Dict
 
 from data.entity.construct_entity import EntityConstructor
+from data.entity.enemy import Enemy
 from data.entity.entity import Entity
-from data.entity.entity_enums import EnemyActionEnum, EnemyEnum, HeroEnum, EntityType
+from data.entity.entity_enums import EnemyActionEnum, HeroEnum, EntityType, EnemyEnum
 from data.entity.hero import Hero
 from data.game_stats import GameStats
 from data.other_enums import GamePhase
@@ -10,7 +11,8 @@ from data.room.room_battle import BattleRoom
 from data.room.room_enums import PickupEnum
 from data.room.room_reward import RewardRoom
 from data.shop.room_shop import ShopRoom
-from data.skill.skills import Skill
+from data.skill.skill_enums import SkillEnum
+from data.skill.skills import Skills
 from data.snapshot.hit_data import HitData
 from data.snapshot.permutate_queues import permutate_possible_attack_queues_with_new_weapon
 from data.snapshot.prediction_error import PredictionError
@@ -25,7 +27,7 @@ class Simulation(Snapshot):
     predictions: Predictions
 
     def __init__(self,
-                 skills: List[Skill],
+                 skills: Skills,
                  game_stats: GameStats,
                  hero_deck: List[Weapon],
                  hero_potion_ids: List[int],
@@ -48,7 +50,7 @@ class Simulation(Snapshot):
 
     @staticmethod
     def of(snapshot: Snapshot, predictions: Optional[Predictions] = None):
-        return Simulation(
+        simulation = Simulation(
             skills=snapshot.skills,  # can be copied, cannot change during battle
             game_stats=snapshot.game_stats.clone(),  # reconstructed
             hero_deck=[weapon.clone() for weapon in snapshot.hero_deck],  # reconstructed
@@ -59,9 +61,11 @@ class Simulation(Snapshot):
             reward=snapshot.reward,  # can be copied, cannot change during battle
             predictions=predictions.clone() if predictions is not None else None,
         )
+        simulation.history = snapshot.history.clone(snapshot)
+        return simulation
 
     def clone_simulation(self):
-        return Simulation(
+        simulation = Simulation(
             skills=self.skills,  # can be copied, cannot change during battle
             game_stats=self.game_stats.clone(),  # reconstructed
             hero_deck=[weapon.clone() for weapon in self.hero_deck],  # reconstructed
@@ -72,28 +76,27 @@ class Simulation(Snapshot):
             reward=self.reward,  # can be copied, cannot change during battle
             predictions=self.predictions.clone(),
         )
-
-    # def is_equal(self, other):
-    #     return self.game_stats.is_equal(other.game_stats) \
-    #            and len(self.hero_deck) == len(other.hero_deck) \
-    #            and False not in [self.hero_deck[i].is_equal(other.hero_deck[i]) for i in
-    #                              range(len(self.hero_deck))] \
-    #            and len(self.hero_potion_ids) == len(other.hero_potion_ids) \
-    #            and False not in [self.hero_potion_ids[i] == other.hero_potion_ids[i] for i in
-    #                              range(len(self.hero_potion_ids))] \
-    #            and self.game_phase == other.game_phase \
-    #            and self.room.is_equal(other.room)
+        simulation.history = self.history.clone(self)
+        return simulation
 
     @staticmethod
     def simulation_move_right(snapshot: Snapshot, predictions: Optional[Predictions] = None):
-        new_cell = snapshot.room.hero.position.cell + 1
+        if snapshot.room.hero.hero_id == HeroEnum.SHADOW:
+            new_cell = snapshot.room.get_last_free_space_in_direction(snapshot.room.hero,
+                                                                      snapshot.room.hero.position.get_direction())
+        else:
+            new_cell = snapshot.room.hero.position.cell + 1
         if not snapshot.room.is_legal_position(new_cell):
             return None
         return Simulation.simulation_move(snapshot, predictions, new_cell)
 
     @staticmethod
     def simulation_move_left(snapshot: Snapshot, predictions: Optional[Predictions] = None):
-        new_cell = snapshot.room.hero.position.cell - 1
+        if snapshot.room.hero.hero_id == HeroEnum.SHADOW:
+            new_cell = snapshot.room.get_last_free_space_in_direction(snapshot.room.hero,
+                                                                      snapshot.room.hero.position.get_direction())
+        else:
+            new_cell = snapshot.room.hero.position.cell - 1
         if not snapshot.room.is_legal_position(new_cell):
             return None
         return Simulation.simulation_move(snapshot, predictions, new_cell)
@@ -133,10 +136,22 @@ class Simulation(Snapshot):
 
     @staticmethod
     def simulation_signature_move(snapshot: Snapshot, predictions: Optional[Predictions] = None):
+        return Simulation.simulation_signature_move_internal(snapshot, predictions, False)
+
+    @staticmethod
+    def simulation_turn_and_signature_move(snapshot: Snapshot, predictions: Optional[Predictions] = None):
+        return Simulation.simulation_signature_move_internal(snapshot, predictions, True)
+
+    @staticmethod
+    def simulation_signature_move_internal(snapshot: Snapshot, predictions: Optional[Predictions], turn: bool):
         simulation = Simulation.of(snapshot, predictions)
+        if turn:
+            simulation.room.hero.position.flip()
+            simulation.game_stats.turn_arounds += 1
         if not simulation.can_execute_signature_move(simulation.room.hero, other_direction=False):
             return None
         simulation.execute_signature_move(simulation.room.hero)
+        simulation.room.hero.special_move_cooldown = 0
         simulation.simulate_passing_turn()
         return simulation
 
@@ -152,12 +167,22 @@ class Simulation(Snapshot):
         return simulation
 
     @staticmethod
+    def simulation_turn_and_execute_queue(snapshot: Snapshot, attack_queue: List[Weapon], previous_hero_cell: int):
+        return Simulation.simulation_execute_queue_internal(snapshot, attack_queue, previous_hero_cell, True)
+
+    @staticmethod
     def simulation_execute_queue(snapshot: Snapshot, attack_queue: List[Weapon], previous_hero_cell: int):
-        logger.queue_debug_text("")
-        logger.queue_debug_text(f"Begin simulation {Weapon.pretty_print_list(attack_queue)}")
-        logger.queue_debug_text("")
+        return Simulation.simulation_execute_queue_internal(snapshot, attack_queue, previous_hero_cell, False)
+
+    @staticmethod
+    def simulation_execute_queue_internal(snapshot: Snapshot, attack_queue: List[Weapon], previous_hero_cell: int,
+                                          turn: bool):
         # Prepare simulation.
         simulation = Simulation.of(snapshot)
+        # Turn if needed.
+        if turn:
+            simulation.room.hero.position.flip()
+            simulation.game_stats.turn_arounds += 1
         # Execute the queue.
         attack_queue = [weapon.clone() for weapon in attack_queue]
         for weapon in attack_queue:
@@ -201,7 +226,8 @@ class Simulation(Snapshot):
         elif weapon.weapon_type == WeaponEnum.HOOKBLADE:
             # Sanity check.
             if weapon.strength != weapon.base_strength:
-                raise ValueError(f"Hookblade's base strength isn't what I thought. Strength: {weapon.strength} base: {weapon.base_strength}")
+                raise ValueError(
+                    f"Hookblade's base strength isn't what I thought. Strength: {weapon.strength} base: {weapon.base_strength}")
             return self.execute_hookblade(attacker, weapon, previous_hero_cell)
         elif weapon.weapon_type == WeaponEnum.METEOR_HAMMER:
             targets = [self.room.get_first_target_space_ahead_in_range(attacker, 3)]
@@ -217,7 +243,7 @@ class Simulation(Snapshot):
             killed = True in [enemy.hp.hp <= 0 for enemy in self.room.enemies]
             if killed:
                 targets = [targets[0] - 1, targets[0] + 1]
-                hit_data2 = self.room.hit_entities(attacker, targets, Weapon.explosion())
+                hit_data2 = self.room.hit_entities(attacker, targets, Weapon.explosion(2))
                 hit_data.merge(hit_data2)
             return self.execute_weapon_aftermath(attacker, weapon, previous_hero_cell, hit_data)
 
@@ -247,9 +273,6 @@ class Simulation(Snapshot):
             self.game_stats.coins -= 1
         elif weapon.weapon_type == WeaponEnum.LIGHTINING:
             targets = [self.room.get_last_target_space_ahead(attacker)]
-        elif weapon.weapon_type == WeaponEnum.CHAKRAM:
-            targets = self.room.get_first_target_spaces_around(attacker)
-            weapon.strength = weapon.base_strength
         elif weapon.weapon_type == WeaponEnum.EARTH_IMPALE:
             targets = attacker.position.get_spaces([-2, 2])
         elif weapon.weapon_type == WeaponEnum.SHADOW_KAMA:
@@ -259,15 +282,15 @@ class Simulation(Snapshot):
         elif weapon.weapon_type == WeaponEnum.VOLLEY:
             # enemy only! hero is always the target
             targets = [previous_hero_cell]
+        elif weapon.weapon_type == WeaponEnum.CHAKRAM:
+            targets = self.room.get_first_target_spaces_around(attacker)
+            chakram_to_attack_with = weapon.clone()
+            weapon.strength = weapon.base_strength
+            hit_data = self.room.hit_entities(attacker, targets, chakram_to_attack_with,
+                                              simulate_move=self.simulate_move)
 
         # GLOBAL ATTACKS
-        elif weapon.weapon_type == WeaponEnum.CORRUPTED_WAVE_LTR:
-            raise PredictionError(f"Cannot simulate using {weapon.weapon_type} yet")
-        elif weapon.weapon_type == WeaponEnum.CORRUPTED_WAVE_RTL:
-            raise PredictionError(f"Cannot simulate using {weapon.weapon_type} yet")
         elif weapon.weapon_type == WeaponEnum.CORRUPTED_EXPLOSION:
-            targets = self.room.get_all_targets_cells()
-        elif weapon.weapon_type == WeaponEnum.CORRUPTED_BARRAGE:
             targets = self.room.get_all_targets_cells()
         elif weapon.weapon_type == WeaponEnum.SCAR_STRIKE:
             targets = self.room.get_all_hurt_enemies_cells()
@@ -277,10 +300,29 @@ class Simulation(Snapshot):
             hit_data = self.room.hit_entities(attacker, targets, weapon, simulate_move=self.simulate_move)
             return self.execute_weapon_aftermath(attacker, weapon, previous_hero_cell, hit_data)
 
+        # IN-MEMORY ATTACKS
+        elif weapon.weapon_type == WeaponEnum.CORRUPTED_WAVE_LTR:
+            self.history.room.spawn_corrupted_wave(cell=0, facing=1, strength=weapon.strength)
+        elif weapon.weapon_type == WeaponEnum.CORRUPTED_WAVE_RTL:
+            self.history.room.spawn_corrupted_wave(cell=self.room.board_size, facing=0, strength=weapon.strength)
+        elif weapon.weapon_type == WeaponEnum.CORRUPTED_BARRAGE:
+            self.history.room.spawn_corrupted_wave(cell=attacker.position.cell + 1, facing=1, strength=weapon.strength)
+            self.history.room.spawn_corrupted_wave(cell=attacker.position.cell - 1, facing=0, strength=weapon.strength)
+        elif weapon.weapon_type == WeaponEnum.TRAP:
+            targets = attacker.position.get_spaces([1])
+            if not self.room.is_legal_position(targets[0]):
+                pass
+            self.history.room.set_trap(targets[0], weapon.strength)
+        elif weapon.weapon_type == WeaponEnum.BOMB:
+            targets = attacker.position.get_spaces([1])
+            if not self.room.is_legal_position(targets[0]):
+                pass
+            self.history.room.add_bomb(targets[0], weapon.strength)
+
         # MOVE
         elif weapon.weapon_type == WeaponEnum.MIRROR:
-            hit_data = self.simulate_swap(attacker, (self.room.board_size - 1) // 2, target_required=False,
-                                          flip_targets=True)
+            hit_data = self.simulate_swap(attacker, self.room.board_size - attacker.position.cell - 1,
+                                          target_required=False, flip_targets=True)
         elif weapon.weapon_type == WeaponEnum.DASH:
             target_cell = self.room.get_last_free_space_ahead(attacker)
             hit_data = self.simulate_move(attacker, target_cell, dash=True)
@@ -296,7 +338,10 @@ class Simulation(Snapshot):
                         hit_data2 = self.simulate_move(target2[0], attacker_cell - 1)
                         hit_data.merge(hit_data2)
         elif weapon.weapon_type == WeaponEnum.ORIGIN_OF_SYMMETRY:
-            hit_data = self.simulate_swap(attacker, (self.room.board_size - 1) // 2)
+            hit_data = self.simulate_swap(attacker, (self.room.board_size - 1) // 2, target_required=False)
+        elif weapon.weapon_type == WeaponEnum.BOSS_SWAP:
+            the_boss_cell = self.room.get_the_boss().position.cell
+            hit_data = self.simulate_swap(attacker, the_boss_cell)
 
         # MOVE AND ATTACK
         elif weapon.weapon_type == WeaponEnum.SHARP_TURN:
@@ -307,12 +352,15 @@ class Simulation(Snapshot):
                 self.game_stats.turn_arounds += 1
         elif weapon.weapon_type == WeaponEnum.CHARGE:
             target_cell = self.room.get_last_free_space_ahead(attacker)
+            logger.queue_debug_text(f"move to cell {target_cell}")
             hit_data = self.simulate_move(attacker, target_cell, dash=True)
             if attacker.hp.hp > 0:
                 target = attacker.position.get_spaces([1])
+                logger.queue_debug_text(f"attack cell {target}")
                 hit_data2 = self.room.hit_entities(attacker, target, weapon)
+                logger.queue_debug_text(f"hits {hit_data.hits}")
                 hit_data.merge(hit_data2)
-        elif weapon.weapon_type in [WeaponEnum.BACK_CHARGE, WeaponEnum.BACK_CHARGE_ALT]:
+        elif weapon.weapon_type == WeaponEnum.BACK_CHARGE:
             target_cell = self.room.get_last_free_space_behind(attacker)
             hit_data = self.simulate_move(attacker, target_cell, dash=True)
             if attacker.hp.hp > 0:
@@ -351,15 +399,15 @@ class Simulation(Snapshot):
             target = self.room.get_first_target_space_ahead(attacker)
             target_entity = self.room.find_targets([target])
             if len(target_entity) and not target_entity[0].is_heavy():
-                hit_data = self.room.hit_entities(attacker, [target], weapon)
-                hit_data2 = self.simulate_swap(attacker, target)
+                hit_data = self.simulate_swap(attacker, target)
+                hit_data2 = self.room.hit_entities(attacker, [target], weapon)
                 hit_data.merge(hit_data2)
         elif weapon.weapon_type == WeaponEnum.BACK_SMOKE_BOMB:
             target = self.room.get_first_target_space_behind(attacker)
             target_entity = self.room.find_targets([target])
             if len(target_entity) and not target_entity[0].is_heavy():
-                hit_data = self.room.hit_entities(attacker, [target], weapon)
-                hit_data2 = self.simulate_swap(attacker, target)
+                hit_data = self.simulate_swap(attacker, target)
+                hit_data2 = self.room.hit_entities(attacker, [target], weapon)
                 hit_data.merge(hit_data2)
 
         # SUMMONS
@@ -372,11 +420,13 @@ class Simulation(Snapshot):
             if len(target_entity) or not self.room.is_legal_position(targets[0]):
                 pass
             self.room.enemies.append(EntityConstructor.thorns(targets[0]))
-        elif weapon.weapon_type == WeaponEnum.TRAP:
+            self.history.room.summon_thorns(targets[0], weapon.clone())
+        elif weapon.weapon_type == WeaponEnum.BARRICADE:
             targets = attacker.position.get_spaces([1])
-            if not self.room.is_legal_position(targets[0]):
+            target_entity = self.room.find_targets(targets)
+            if len(target_entity) or not self.room.is_legal_position(targets[0]):
                 pass
-            self.room.enemies.append(EntityConstructor.trap(targets[0]))
+            self.room.enemies.append(EntityConstructor.barricade(targets[0]))
 
         # OTHER
         elif weapon.weapon_type == WeaponEnum.MAKU:
@@ -384,7 +434,7 @@ class Simulation(Snapshot):
             logger.queue_debug_error("Make i.e. scene change, WTF is going to happen?")
             pass
         elif weapon.weapon_type == WeaponEnum.SIGNATURE_MOVE:
-            if not attacker.is_hero():
+            if not attacker.is_hero() or not isinstance(attacker, Hero):
                 raise PredictionError("enemies are not allowed to execute signature move")
             hit_data = self.execute_signature_move(attacker)
         elif weapon.weapon_type == WeaponEnum.COPYCAT_MIRROR:
@@ -413,6 +463,8 @@ class Simulation(Snapshot):
 
         # Clear out the dead.
         enemies_left = []
+        wardens_killed = []
+        thorns_killed = []
         boss_killed = False
         logger.queue_debug_text("cleaning up enemies")
         for enemy in self.room.enemies:
@@ -424,12 +476,19 @@ class Simulation(Snapshot):
                 # Mark boss being killed.
                 if enemy.is_boss():
                     boss_killed = True
+                # Mark a warden being killed so that it can blow up.
+                elif enemy.enemy_id == EnemyEnum.WARDEN:
+                    wardens_killed.append(enemy.position.get_death_cell())
+                # Mark a thorns being killed so that it can hit back.
+                elif enemy.enemy_id == EnemyEnum.THORNS:
+                    thorns_killed.append((enemy.position.get_death_cell(), attacker.is_hero()))
                 # Drop anything.
                 loc = enemy.position.get_death_cell()
                 if loc not in self.room.pickups:
                     self.room.pickups[loc] = {}
                 self.room.pickups[loc][PickupEnum.ANY] = 1
                 self.predictions.new_potions += 1
+                self.predictions.allow_more_coins = True
                 # Increase strength of Chakrams.
                 for queue_weapon in self.room.hero.attack_queue:
                     if queue_weapon.weapon_type == WeaponEnum.CHAKRAM and queue_weapon.strength < 9:
@@ -437,16 +496,19 @@ class Simulation(Snapshot):
                 for deck_weapon in self.hero_deck:
                     if deck_weapon.weapon_type == WeaponEnum.CHAKRAM and deck_weapon.strength < 9:
                         deck_weapon.strength += 1
-                # Increase combo.
-                if not self.room.is_boss_room():
+                # Increase combo unless boss room; summon can start a combo, but not count towards it?.
+                if not self.room.is_boss_room() and not enemy.is_thorns():
                     if not self.predictions.combo_started:
                         logger.queue_debug_text("combo started")
                         self.predictions.combo_started = True
                     else:
-                        logger.queue_debug_text("combo increased")
-                        self.game_stats.combos += 1
+                        if enemy.enemy_id not in [EnemyEnum.BLIGHT_CHARGER, EnemyEnum.THORNS]:
+                            logger.queue_debug_text("combo increased")
+                            self.game_stats.combos += 1
+                        else:
+                            logger.queue_debug_text("summons do not increase combo")
                 # Increase friendly kills.
-                if not attacker.is_hero(): # ?????? and not self.room.is_boss_room():
+                if not attacker.is_hero() and not attacker.is_thorns() and not enemy.is_thorns():  # ?????? and not self.room.is_boss_room():
                     self.game_stats.friendly_kills += 1
                 # Spawn Corrupted Progeny.
                 if enemy.is_corrupted():
@@ -458,6 +520,35 @@ class Simulation(Snapshot):
 
         # Count the hits.
         self.game_stats.hits += hit_data.hits
+
+        # Thorns hit back.
+        for thorns, is_hero in thorns_killed:
+            thorns_weapon = self.history.room.hit_thorns(thorns) or self.get_thorns()
+            if not thorns_weapon:
+                raise PredictionError("Could not find a thorns weapon in the deck")
+            if not is_hero and abs(attacker.position.cell - thorns) == 1:
+                thorns_postmortem = Enemy.thorns_postmortem()
+                hit_data = self.room.hit_entities(
+                    thorns_postmortem,
+                    [attacker.position.cell],
+                    thorns_weapon,
+                )
+                self.execute_weapon_aftermath(thorns_postmortem, thorns_weapon, previous_hero_cell, hit_data)
+
+        # Explode the dead wardens.
+        warden_targets = set()
+        for warden_cell in wardens_killed:
+            warden_targets.add(warden_cell - 1)
+            warden_targets.add(warden_cell + 1)
+        if len(warden_targets):
+            warden_postmortem = Enemy.warden_postmortem()
+            explosion = Weapon.explosion(2)
+            hit_data = self.room.hit_entities(
+                warden_postmortem,
+                list(warden_targets),
+                explosion
+            )
+            self.execute_weapon_aftermath(warden_postmortem, explosion, previous_hero_cell, hit_data)
 
         # Perform double attack if applicable.
         if weapon is not None:
@@ -472,6 +563,7 @@ class Simulation(Snapshot):
     def execute_kunai(self, attacker: Entity, weapon: Weapon, previous_hero_cell: int) -> None:
         kunai = weapon.kunai()
         kunai_total = weapon.strength
+        weapon.cooldown_charge = 0
         if weapon.attack_effect is not None:
             if weapon.attack_effect == WeaponAttackEffectEnum.DOUBLE_STRIKE:
                 kunai_total *= 2
@@ -597,6 +689,16 @@ class Simulation(Snapshot):
             self.simulate_move(self.room.hero, new_cell, dash=True)
 
         # apply poison, damage, curse etc.
+        # TODO assumption: this works for the tile version too
+        if self.skills.has_skill(SkillEnum.DAMAGING_MOVE):
+            for target in targets:
+                target.hit(Weapon.signature_move(), None)
+        if self.skills.has_skill(SkillEnum.CURSING_MOVE):
+            for target in targets:
+                target.state.curse = True
+        if self.skills.has_skill(SkillEnum.MAMUSHI_MOVE):
+            for target in targets:
+                target.state.poison = 3
         self.execute_weapon_aftermath(hero, weapon=None, previous_hero_cell=-1, hit_data=hit_data,
                                       cause="signature move")
         return hit_data
@@ -611,6 +713,7 @@ class Simulation(Snapshot):
             route = [new_cell]
         for temp_cell in route:
             if mover.is_hero():
+                # Pick up pickups.
                 if temp_cell in self.room.pickups:
                     updated_pickups = self.simulate_pickups(self.room.pickups[temp_cell])
                     if updated_pickups is None:
@@ -621,15 +724,19 @@ class Simulation(Snapshot):
                             del self.room.pickups[temp_cell][PickupEnum.GOLD]
                             if len(self.room.pickups[temp_cell]) == 0:
                                 del self.room.pickups[temp_cell]
+                # Actually move.
+                mover.position.cell = new_cell
             elif mover.hp.hp > 0:
-                for enemy in self.room.enemies:
-                    if enemy.enemy_id == EnemyEnum.TRAP:
-                        # TODO where is trap damage stored
-                        logger.queue_debug_text(f"I should learn this earlier but trap is {enemy.pretty_print()}")
-                        enemy.hp.hp = 0  # hopefully this is a good way to clear the trap
-                        hit_data = self.room.hit_entities(self.room.hero, [mover.position.cell], Weapon.trap(3))
-        # Actually move.
-        mover.position.cell = new_cell
+                # Move first.
+                mover.position.cell = new_cell
+                # Check for traps.
+                trap_strength = self.history.room.check_trap(temp_cell)
+                if trap_strength:
+                    hit_data = self.room.hit_entities(
+                        attacker=self.room.hero,
+                        target_cells=[mover.position.cell],
+                        weapon=Weapon.trap(trap_strength)
+                    )
         return hit_data
 
     def simulate_pickups(self, pickups: Dict[PickupEnum, int]) -> Optional[Dict[PickupEnum, int]]:
@@ -640,6 +747,7 @@ class Simulation(Snapshot):
             else:
                 for i in range(total):
                     potions_to_pick_up.append(pickup_type)
+        logger.queue_debug_warn(f"potions top pick up: {potions_to_pick_up}")
         MAX_POTIONS = 3  # TODO apply the big bag skill
         if len(potions_to_pick_up) > MAX_POTIONS - len(self.hero_potion_ids):
             # TODO I will worry about those predictions later (DEEEEEP)
@@ -671,10 +779,10 @@ class Simulation(Snapshot):
 
     def simulate_swap(self, attacker: Entity, target_cell: int, target_required=True,
                       flip_targets=False) -> HitData:
-        target = self.room.find_targets([target_cell])[0]
-        if target is None and target_required:
+        targets = self.room.find_targets([target_cell])
+        if (targets is None or not len(targets)) and target_required:
             return HitData.empty()
-        if target is not None and target.is_heavy():
+        if targets and targets[0] is not None and targets[0].is_heavy():
             return HitData.empty()
         attacker_cell = attacker.position.cell
         hit_data = self.simulate_move(attacker, target_cell, dash=False)
@@ -682,12 +790,12 @@ class Simulation(Snapshot):
             attacker.position.flip()
             if attacker.is_hero():
                 self.game_stats.turn_arounds += 1
-        if target is not None:
-            hit_data2 = self.simulate_move(target, attacker_cell, dash=False)
+        if targets:
+            hit_data2 = self.simulate_move(targets[0], attacker_cell, dash=False)
             hit_data.merge(hit_data2)
             if flip_targets:
-                target.position.flip()
-                if target.is_hero():
+                targets[0].position.flip()
+                if targets[0].is_hero():
                     self.game_stats.turn_arounds += 1
         return hit_data
 
@@ -704,12 +812,22 @@ class Simulation(Snapshot):
             if weapon.weapon_type == WeaponEnum.BLADE_OF_PATIENCE and weapon.strength < 9:
                 weapon.strength += 1
 
-    def simulate_enemies(self, previous_hero_cell: int):
+    def simulate_enemies(self, previous_hero_cell: int) -> Dict:
         # "self" is already a simulation at this point
+        # If enemies are already cleared, skip the simulation (nobody will do anything anyway).
+        if self.predictions.enemies_cleared:
+            return {"": self}
+        logger.queue_debug_text("ENEMIES FOR SIMULATION:")
+        for enemy in self.room.enemies:
+            logger.queue_debug_text(enemy.pretty_print())
+        # First turn has passed.
+        for enemy in self.room.enemies:
+            if enemy.enemy_id != EnemyEnum.CORRUPTED_PROGENY:
+                enemy.first_turn = False
         # Poisons happen first!
         for enemy in self.room.enemies:
             if enemy.state.poison > 0:
-                enemy.hit(Weapon.poison_tick())
+                enemy.hit(Weapon.poison_tick(), None)  # TODO this needs to cover the twins too right?
             enemy.state.pass_turn()
         self.execute_weapon_aftermath(
             attacker=self.room.hero,
@@ -718,17 +836,42 @@ class Simulation(Snapshot):
             hit_data=HitData.empty(),
             cause="enemies poison cleanup"
         )
-        # Moves happen first.
+        # Then corrupted waves and bombs (for now only Hideyoshi can set bombs).
+        the_boss = self.room.get_the_boss()
+        for wave in self.history.room.corrupted_waves:
+            logger.queue_debug_text(f"WAVE str {wave.strength} hitting cell {wave.position.cell}")
+            hit_data = self.room.hit_entities(
+                attacker=the_boss,
+                target_cells=[wave.position.cell],
+                weapon=Weapon.corrupted_wave(wave.strength)
+            )
+            self.game_stats.hits += hit_data.hits
+        for bomb in self.history.room.tick_bombs():
+            cell, strength = bomb
+            logger.queue_debug_text(f"BOMB str {strength} hitting cell {cell}")
+            hit_data = self.room.hit_entities(
+                attacker=the_boss,
+                target_cells=[cell - 1, cell, cell + 1],
+                weapon=Weapon.explosion(strength)
+            )
+            self.game_stats.hits += hit_data.hits
+        # Then moves.
         for enemy in self.room.enemies:
             if enemy.state.ice > 0:
                 continue
             new_cell = None
             if enemy.action == EnemyActionEnum.MOVE_RIGHT:
                 logger.queue_debug_text(f"MOVE {enemy.pretty_print()}")
-                new_cell = enemy.position.cell + 1
+                if enemy.enemy_id in [EnemyEnum.STRIDER, EnemyEnum.FUMIKO]:
+                    new_cell = self.room.get_last_free_space_in_direction(enemy, 1)
+                else:
+                    new_cell = enemy.position.cell + 1
             elif enemy.action == EnemyActionEnum.MOVE_LEFT:
                 logger.queue_debug_text(f"MOVE {enemy.pretty_print()}")
-                new_cell = enemy.position.cell - 1
+                if enemy.enemy_id in [EnemyEnum.STRIDER, EnemyEnum.FUMIKO]:
+                    new_cell = self.room.get_last_free_space_in_direction(enemy, -1)
+                else:
+                    new_cell = enemy.position.cell - 1
             elif enemy.action == EnemyActionEnum.TURN_AROUND:
                 logger.queue_debug_text(f"TURN {enemy.pretty_print()}")
                 enemy.position.flip()
@@ -750,7 +893,7 @@ class Simulation(Snapshot):
             for enemy in enemies_that_attack:
                 if enemy.hp.hp <= 0:
                     continue
-                logger.queue_debug_text(f"MOVE {enemy.pretty_print()}")
+                logger.queue_debug_text(f"EXECUTE {enemy.pretty_print()}")
                 for weapon in enemy.attack_queue:
                     if weapon.weapon_type == WeaponEnum.SHIELD_ALLY:
                         # TODO return several possibilities
@@ -761,6 +904,8 @@ class Simulation(Snapshot):
                             weapon=weapon,
                             previous_hero_cell=previous_hero_cell,
                         )
+            if not len(self.room.enemies):
+                self.predictions.enemies_cleared = True
             return {"": self}
         logger.queue_debug_text(f"{len(enemies_that_attack)} enemies want to attack!!!")
         simulation_modes = {
@@ -788,5 +933,15 @@ class Simulation(Snapshot):
                             weapon=weapon,
                             previous_hero_cell=previous_hero_cell,
                         )
+            if not len(simulation.room.enemies):
+                simulation.predictions.enemies_cleared = True
             simulations[name] = simulation
         return simulations
+
+    def get_thorns(self) -> Optional[Weapon]:
+        # If memory fails (e.g. started mid-run), find the thorns in hero's deck.
+        # 99% of the time it should be the only one and I'm OK with that number.
+        for weapon in self.hero_deck:
+            if weapon.weapon_type == WeaponEnum.THORNS:
+                return weapon.clone()
+        return None

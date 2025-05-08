@@ -3,7 +3,6 @@ from typing import Dict, List, Optional
 from data.mappers import pickup_name_mapper
 from data.other_enums import GamePhase
 from data.room.room_enums import PickupEnum
-from data.snapshot.snapshot import Snapshot
 from logger import logger
 
 
@@ -15,13 +14,74 @@ class Potion:
         self.potion_types = possible_types
         self.entangled_id = entangled_id
 
+    def pretty_print(self) -> str:
+        retval = f"{'/'.join(pickup_name_mapper[t] for t in self.potion_types)}"
+        if self.entangled_id is not None:
+            retval += f" ({self.entangled_id})"
+        return retval
+
+
+class PotionGuess:
+    guess_id: int
+    potion_types: List[PickupEnum]
+
+    def __init__(self, guess_id: int, possible_types: List[PickupEnum]):
+        self.guess_id = guess_id
+        self.potion_types = possible_types
+
 
 class PotionHistory:
-    potions: Dict[int, Potion]
+    current_potion_guess_dict: Dict[int, PotionGuess]
+    all_potion_guesses: Dict[int, PotionGuess]
+    current_hero_potions: List[int]
+    current_guess_id: int
+
+    # Call this whenever leaving a room - new potions will be indexed anew.
+    def clear_current_guesses(self, hero_potion_ids: List[int]):
+        leftover_guesses = {}
+        for potion_id, guess in self.current_potion_guess_dict.items():
+            if potion_id in hero_potion_ids:
+                leftover_guesses[potion_id] = guess
+        self.current_potion_guess_dict = leftover_guesses
+
+    # Get first free current guess id.
+    def free_current_guess_id(self) -> int:
+        for i in range(10):
+            if i not in self.current_potion_guess_dict:
+                return i
+        raise ValueError("All guess IDs taken")
+
+    # Get the guesses that are certain.
+    def get_known_types(self):
+        retval = []
+        for guess in self.current_potion_guess_dict.values():
+            if len(guess.potion_types) == 1:
+                retval.append(guess.potion_types[0])
+        return retval
+
+    # Call this whenever a new potion appears - either dropped in battle or free/bought in shop.
+    def add_guesses(self, possible_types: List[PickupEnum], single_guess: bool = False):
+        # Filter out types that are known.
+        known_types = self.get_known_types()
+        possibilities_left = [x for x in possible_types if x not in known_types]
+        # If all were known, finish.
+        if not len(possibilities_left):
+            return
+        # If it's a single, add it as such.
+        if single_guess:
+            current_guess_id = self.free_current_guess_id()
+            self.current_guess_id += 1
+            self.current_potion_guess_dict[current_guess_id] = PotionGuess(
+                guess_id=self.current_guess_id,
+                possible_types=possibilities_left
+            )
+
+    potion_ids: List[int]
+    potion_types: Dict[int, Potion]
     potion_queue: List[Potion]
     last_entanglement_id: int
 
-    def __init__(self, first_snapshot: Snapshot):
+    def __init__(self, first_snapshot):
         potion_ids = first_snapshot.hero_potion_ids
         all_types = [
             PickupEnum.EDAMAME_BREW,
@@ -37,7 +97,7 @@ class PotionHistory:
         self.potion_queue = []
         self.last_entanglement_id = 0
 
-    def battle_update(self, previous_snapshot: Snapshot, new_snapshot: Snapshot):
+    def battle_update(self, previous_snapshot, new_snapshot):
         old_ids = previous_snapshot.hero_potion_ids
         new_ids = new_snapshot.hero_potion_ids
         added_ids = []
@@ -58,7 +118,7 @@ class PotionHistory:
                 self.potion_queue.append(Potion([potion_type]))
         self.process_queue(added_ids)
 
-    def shop_update(self, previous_snapshot: Snapshot, new_snapshot: Snapshot) -> List[int]:
+    def shop_update(self, previous_snapshot, new_snapshot) -> List[int]:
         old_ids = previous_snapshot.hero_potion_ids
         new_ids = new_snapshot.hero_potion_ids
         added_ids = []
@@ -155,3 +215,40 @@ class PotionHistory:
     #             pot.potion_types.remove(overlapping_types[0])
     #         if len(other_entangled_potions) == 1:
     #             pot.entangled_id = None
+
+    # scenario 1: used only, whenever
+    # diff in hero_potions_id -> simulations of possible types
+
+    # scenario 2: pickup only, middle of fight
+    # diff in pickups laying on the ground = new potions
+
+    # secnario 3: pickup only, end of battle
+    # assign entangled ids if too many potions to fit
+
+    # scneario 4: used some, pickep up some, middle of fight
+    # we know exactly what was picked up
+    # overlay that with what's left
+    # deduce from the rest what's been used
+
+    # scneario 5: used some, pickep up some, end of fight (worst one)
+    # we know what could be picked up AND how much WAS
+    # overlay that with what's left
+    # deduce from the rest what's been used
+
+    def simulate_potions(self, used_this_turn: int, hero_potions_ids: List[int],
+                         left_the_ground: List[PickupEnum], big_pockets_level: int):
+        # WHAT WAS TAKEN
+        if len(left_the_ground) + len(self.potions) > 3 + big_pockets_level:
+            # that's an issue - unsure which pots were picked up; possible only at battle end
+            pass
+        else:
+            # add the new potions to the collections, solving riddles if possible
+            pass
+        # WHAT WAS USED
+
+    def simulate_potions_used(self, total_potions_used: int, certain_ids: List[int]):
+        potions_to_simulate = []
+
+    # Pass in current potions IDs and a list of cell: potion to pick up
+    def pick_up_room_potions(self, hero_potion_ids: List[int], potions: List[Dict[int, PickupEnum]]):
+        pass

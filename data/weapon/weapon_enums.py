@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class WeaponEnum(Enum):
+    CORRUPTED_WAVE = -6
     POISON_TICK = -5
     PUSH = -4
     EXPLOSION = -3
@@ -17,7 +18,7 @@ class WeaponEnum(Enum):
     GRAPPLING_HOOK = 7
     TWIN_TESSEN = 8
     TRAP = 9
-    # ARTIFACT: 10
+    BOMB = 10
     SHIELD_SELF = 11
     CHARGE = 12
     BACK_CHARGE = 13
@@ -28,7 +29,7 @@ class WeaponEnum(Enum):
     SHURIKEN = 18
     CHAKRAM = 19
     CURSE = 20
-    # ARTIFACT: 21
+    # ARTIFACT: 21 this should be sharp turn
     EARTH_IMPALE = 22
     MIRROR = 23
     BACK_STRIKE = 24
@@ -45,11 +46,11 @@ class WeaponEnum(Enum):
     SHIELD_ALLY = 35
     CORRUPTED_BARRAGE = 36
     SCAR_STRIKE = 37
-    # ARTIFACT: 38
+    # ARTIFACT: 38 this should be sig. move
     METEOR_HAMMER = 39
     KI_PUSH = 40
     VOLLEY = 41
-    BACK_CHARGE_ALT = 42
+    BARRICADE = 42
     COPYCAT_MIRROR = 43
     # ARTIFACT: 44
     BACK_SHADOW_DASH = 45
@@ -60,7 +61,7 @@ class WeaponEnum(Enum):
     CORRUPTED_WAVE_LTR = 50
     CORRUPTED_WAVE_RTL = 51
     HOOKBLADE = 52
-    # ARTIFACT: 53
+    BOSS_SWAP = 53
     CORRUPTED_EXPLOSION = 54
 
     SHARP_TURN = -23

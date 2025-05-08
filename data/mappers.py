@@ -6,6 +6,7 @@ from data.weapon.weapon_enums import WeaponTileEffectEnum, WeaponAttackEffectEnu
 weapon_mapper = {
     WeaponEnum.PUSH: "PUSH",
     WeaponEnum.STOP: "STOP",
+    WeaponEnum.SIGNATURE_MOVE: "SIGNATURE MOVE",
     WeaponEnum.SPEAR: "Spear",
     WeaponEnum.LIGHTINING: "Lightning",
     WeaponEnum.TWIN_TESSEN: "Twin Tessen",
@@ -40,7 +41,6 @@ weapon_mapper = {
     WeaponEnum.THORNS: "Thorns",
     WeaponEnum.SHADOW_DASH: "Shadow Dash",
     WeaponEnum.BACK_CHARGE: "Back Charge",
-    WeaponEnum.BACK_CHARGE_ALT: "Back Charge",
     WeaponEnum.BACK_SMOKE_BOMB: "Back Smoke Bomb",
     WeaponEnum.CURSE: "Curse",
     WeaponEnum.SHARP_TURN: "Sharp Turn",
@@ -52,12 +52,17 @@ weapon_mapper = {
     WeaponEnum.BOSS_SUMMON: "Summon",
     WeaponEnum.CORRUPTED_WAVE_LTR: "Corrupted Wave",
     WeaponEnum.CORRUPTED_WAVE_RTL: "Corrupted Wave",
+    WeaponEnum.CORRUPTED_WAVE: "Corrupted Wave",
     WeaponEnum.CORRUPTED_EXPLOSION: "Corrupted Explosion",
     WeaponEnum.VOLLEY: "Volley",
     WeaponEnum.COPYCAT_MIRROR: "Copycat Mirror",
     WeaponEnum.CORRUPTED_BARRAGE: "Corrupted Barrage",
     WeaponEnum.SHIELD_SELF: "Shield Allied",
     WeaponEnum.SHIELD_ALLY: "Shield",
+    WeaponEnum.EXPLOSION: "Explosion",
+    WeaponEnum.BOMB: "Bomb", # TODO confirm the name
+    WeaponEnum.BARRICADE: "Barricade", # TODO confirm the name
+    WeaponEnum.BOSS_SWAP: "Boss-swap",
 }
 
 skill_mapper = {
@@ -155,6 +160,7 @@ room_mapper = {
     "purple-combat-2": RoomEnum.THEATRE_OF_SHADOWS,
     "white-combat-1": RoomEnum.HIDEYOSHI,
     "gray-combat-1": RoomEnum.NOBUNAGA,
+    "darkGreen-combat-1": RoomEnum.IEIASU,
     "shogun-combat-1": RoomEnum.SHOGUN,
 }
 
@@ -203,12 +209,6 @@ room_name_mapper = {
     RoomEnum.SHOGUN: "The Shogun's Castle",
 }
 
-room_corrupted_boss_mapper = {
-    RoomEnum.BAMBOO_GROVE: "Corrupted Daisuke",
-    RoomEnum.HIBIKU_WASTELANDS: "Corrupted Baru",
-    RoomEnum.MOONLIT_PORT: "Corrupted Twins",
-}  # TODO is this still used?
-
 shop_mapper = {
     "green-shop-1A": ShopEnum.BAMBOO_GROVE_UP,
     "green-shop-1B": ShopEnum.BAMBOO_GROVE_DOWN,
@@ -222,7 +222,7 @@ shop_mapper = {
     "purple-shop-1B": ShopEnum.FORSAKEN_LANDS_DOWN,
     "white-shop-1": ShopEnum.HIDEYOSHI,
     "gray-shop-1": ShopEnum.NOBUNAGA,
-    "gray-shop-x": ShopEnum.IEIASU,
+    "darkGreen-shop-1": ShopEnum.IEIASU,
     "shogun-shop-1": ShopEnum.SHOGUN,
 }
 

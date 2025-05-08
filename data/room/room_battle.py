@@ -7,10 +7,11 @@ from data.entity.construct_entity import EntityConstructor
 from data.entity.enemy import Enemy
 from data.entity.entity import Entity
 from data.entity.entity_enums import EnemyEnum
-from data.entity.entity_mappers import room_boss_mapper
+from data.entity.entity_mappers import room_boss_mapper, room_corrupted_boss_mapper, enemy_name_mapper
 from data.entity.hero import Hero
 from data.mappers import room_mapper, pickup_name_mapper, room_number_mapper, boss_room_mapper, room_name_mapper
 from data.room.room_enums import PickupEnum, RoomEnum
+from data.skill.skills import Skills
 from data.snapshot.hit_data import HitData
 from data.snapshot.prediction_error import PredictionError
 from data.weapon.weapon import Weapon
@@ -57,8 +58,8 @@ def get_board_size(room: RoomEnum, progression: int, variant: int) -> int:
         RoomEnum.FORSAKEN_GROUNDS: {
             0: {0: 7},
             2: {0: 9},
-            # 4: {0: 9},
-            # 6: {0: 7},
+            4: {0: 7},
+            6: {0: 7},
         },
         RoomEnum.HOT_SPRINGS: {
             0: {0: 7},
@@ -66,13 +67,25 @@ def get_board_size(room: RoomEnum, progression: int, variant: int) -> int:
             4: {0: 9},
             6: {0: 7},
         },
-        RoomEnum.THEATRE_OF_SHADOWS: {},
+        RoomEnum.THEATRE_OF_SHADOWS: {
+            0: {0: 7},
+            2: {0: 5},
+            4: {0: 9},
+            # 6: various, doesn't exist in save data anyway :|
+        },
         RoomEnum.HIDEYOSHI: {
-            0:{0:7},
+            0: {0: 7},
+            2: {0: 7},
         },
         RoomEnum.NOBUNAGA: {},
-        RoomEnum.IEIASU: {},
-        RoomEnum.SHOGUN: {},
+        RoomEnum.IEIASU: {
+            0: {0: 7},
+            2: {0: 9},
+        },
+        RoomEnum.SHOGUN: {
+            0: {0: 9},
+            2: {0: 7},
+        },
     }.get(room, {}).get(progression, {}).get(variant, -1)
     if retval == -1:
         logger.debug_error(f"ROOM {room} PROGRESSION {progression} VARIANT: {variant} MISSING!")
@@ -114,7 +127,7 @@ class BattleRoom:
         self.board_size = get_board_size(room, progression, variant)
 
     @staticmethod
-    def from_dict(source: Dict):
+    def from_dict(source: Dict, skills: Skills):
         room_raw = source[MAP_SAVE][CURRENT_LOCATION]
         progression = source[PROGRESSION_DATA][PROGRESSION]
         room = room_mapper.get(room_raw)
@@ -153,7 +166,7 @@ class BattleRoom:
         return BattleRoom(
             room=room,
             progression=progression,
-            hero=EntityConstructor.from_dict(source.get(HERO, {}), hero=True),
+            hero=EntityConstructor.from_dict(source.get(HERO, {}), hero=True, skills=skills),
             enemies=enemies,
             pickups=pickups,
             wave_number=source.get(COMBAT_ROOM, {}).get(WAVE_NUMBER, -1),
@@ -215,6 +228,7 @@ class BattleRoom:
                 found = False
                 for index, other_enemy in enumerate(other_enemies):
                     if not found and enemy.is_good_prediction(other_enemy, debug=False):
+                        logger.queue_debug_warn(f"Compare against {other_enemies[index].pretty_print()}")
                         del other_enemies[index]
                         found = True
                 if not found:
@@ -290,19 +304,39 @@ class BattleRoom:
     def is_boss_room(self) -> bool:
         return boss_room_mapper.get(self.room, {}).get(self.progression, False)
 
-    def get_name(self, reward: bool = False) -> str:
+    def get_the_boss(self) -> Optional[Enemy]:
+        if not self.is_boss_room():
+            return None
+        for enemy in self.enemies:
+            if enemy.is_boss():
+                return enemy
+        raise ValueError("Could not find the boss in a boss room")
+
+    def get_name(self, reward: bool = False, splits: bool = False) -> str:
         room_name = room_name_mapper.get(self.room)
         if room_name is None:
             raise ValueError(f"Unknown room name: {self.room}")
-        room_name = f"{room_name}[{self.board_size}]"
+        if not splits:
+            room_name = f"{room_name}[{self.board_size}]"
 
         if self.is_boss_room():
-            boss_name = room_boss_mapper.get(self.room)
+            boss_id = self.get_the_boss().enemy_id.value
+            if self.is_boss_corrupted:
+                # boss_name = room_corrupted_boss_mapper.get(self.room)
+                boss_id *= 100
+                boss_enum = EnemyEnum(boss_id)
+                boss_name = enemy_name_mapper.get(boss_enum, f"Unknown boss: {boss_id}")
+            else:
+                # boss_name = room_boss_mapper.get(self.room)
+                boss_enum = EnemyEnum(boss_id)
+                boss_name = enemy_name_mapper.get(boss_enum, f"Unknown corrupted boss: {boss_id}")
             if boss_name is None:
                 raise ValueError(f"Unknown boss name: {self.room}")
             if reward:
                 return f"{room_name}, boss battle ({boss_name}) rewards"
-            return f"{room_name}, boss battle ({'Corrupted ' if self.is_boss_corrupted else ''}{boss_name})"
+            if splits:
+                return f"{room_name}, boss battle"
+            return f"{room_name}, boss battle ({boss_name})"
 
         if reward:
             return f"{room_name}, battle #{(self.progression + 1) // 2} rewards"
@@ -403,9 +437,9 @@ class BattleRoom:
     def get_last_free_space_in_direction(self, attacker: Entity, direction: int) -> int:
         current_cell = attacker.position.cell
         while True:
-            if self.is_edge_space(current_cell):
-                return current_cell
             new_cell = current_cell + direction
+            if not self.is_legal_position(current_cell):
+                return current_cell - direction
             if len(self.find_targets([new_cell])) > 0:
                 return current_cell
             current_cell = new_cell
@@ -434,8 +468,7 @@ class BattleRoom:
         targets = []
         for enemy in self.enemies:
             if enemy.position.cell in target_cells:
-                if enemy.enemy_id != EnemyEnum.TRAP:
-                    targets.append(enemy)
+                targets.append(enemy)
         if self.hero.position.cell in target_cells:
             targets.append(self.hero)
         return targets
@@ -466,60 +499,6 @@ class BattleRoom:
                     shock_targets.add(current_cell)
         return [dt.position.cell for dt in direct_targets], list(shock_targets)
 
-        # for cell in target_cells:
-        #     if cell is None:
-        #         continue
-        #     include = False
-        #     for other_cell in target_cells:
-        #         if other_cell == cell - 1:
-        #             include = True
-        #         if other_cell == cell + 1:
-        #             include = True
-        #     if attacker
-        #     for enemy in self.enemies:
-        #         if enemy.position.cell == cell
-        #             if include:
-        #                 double_targets.append(cell)
-        #             else:
-        #                 single_targets.append(cell)
-        #     if self.hero.position.cell == cell:
-        #         if include:
-        #             double_targets.append(cell)
-        #         else:
-        #             single_targets.append(cell)
-        # for cell in target_cells:
-        #     if cell is None:
-        #         continue
-        #     new_target_cell = cell
-        #     while True:
-        #         new_target_cell -= 1
-        #         if new_target_cell < 0:
-        #             break
-        #         if new_target_cell in target_cells:
-        #             break
-        #         found = False
-        #         for enemy in self.enemies:
-        #             if enemy.position.cell == new_target_cell and enemy.enemy_id != EnemyEnum.TRAP:
-        #                 targets.append(enemy)
-        #                 found = True
-        #         if not found:
-        #             break
-        #     new_target_cell = cell
-        #     while True:
-        #         new_target_cell += 1
-        #         if new_target_cell >= self.board_size:
-        #             break
-        #         if new_target_cell in target_cells:
-        #             break
-        #         found = False
-        #         for enemy in self.enemies:
-        #             if enemy.position.cell == new_target_cell and enemy.enemy_id != EnemyEnum.TRAP:
-        #                 targets.append(enemy)
-        #                 found = True
-        #         if not found:
-        #             break
-        # return single_targets, double_targets, targets
-
     def hit_entities(self, attacker: Entity, target_cells: List[Optional[int]], weapon: Weapon,
                      simulate_move=None) -> HitData:
         hit_data = HitData.empty()
@@ -540,7 +519,12 @@ class BattleRoom:
         if not len(direct_targets):
             return hit_data
         for target in direct_targets:
-            hit_data.hits += target.hit(weapon, twin_target)
+            if weapon.weapon_type == WeaponEnum.CORRUPTED_WAVE and attacker.is_equal(target):
+                hit_data.hits += target.boss_corruption_heal(weapon)
+            else:
+                hit_data.hits += target.hit(weapon, twin_target)
+            # if target.enemy_id == EnemyEnum.THORNS:
+            #     hit_data.hits += attacker.hit(Weapon.thorns(), twin_target)
         if does_shock:
             shock_itself = Weapon.shock()
             for target in shock_targets:

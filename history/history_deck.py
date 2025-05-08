@@ -3,7 +3,6 @@ from typing import List, Optional
 from data.other_enums import WeaponUpgradePlace
 from data.room.room_enums import RoomEnum
 from data.shop.shop_enums import ShopEnum
-from data.snapshot.snapshot import Snapshot
 from data.weapon.weapon import Weapon
 
 
@@ -71,7 +70,7 @@ class WeaponHistory:
 class DeckHistory:
     deck: List[WeaponHistory]
 
-    def __init__(self, first_snapshot: Snapshot):
+    def __init__(self, first_snapshot):
         self.deck = []
         # for weapon in first_snapshot.hero_deck:
         #     # do something TODO!!!

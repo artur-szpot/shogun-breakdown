@@ -9,7 +9,7 @@ from data.entity.entity_state import EntityState
 from data.mappers import weapon_mapper
 from data.snapshot.prediction_error import PredictionError
 from data.weapon.weapon import Weapon
-from data.weapon.weapon_enums import WeaponAttackEffectEnum, WeaponEnum
+from data.weapon.weapon_enums import WeaponAttackEffectEnum
 from logger import logger
 
 
@@ -65,6 +65,40 @@ class Enemy(Entity):
             attack_queue=[],
         )
 
+    @staticmethod
+    def warden_postmortem():
+        # Only exists to be the attacker in Warden's death explosion.
+        return Enemy(
+            enemy_id=EnemyEnum.WARDEN,
+            state=EntityState.fresh(),
+            position=EntityPosition(0, 0),
+            hp=EntityHp(hp=1, max_hp=1),
+            action=EnemyActionEnum.WAIT,
+            previous_action=EnemyActionEnum.WAIT,
+            next_weapon=None,
+            first_turn=False,
+            elite_type=EnemyEliteEnum.NOT_ELITE,
+            pattern_index=0,
+            attack_queue=[],
+        )
+
+    @staticmethod
+    def thorns_postmortem():
+        # Only exists to be the attacker in Thorns' retribution.
+        return Enemy(
+            enemy_id=EnemyEnum.THORNS,
+            state=EntityState.fresh(),
+            position=EntityPosition(0, 0),
+            hp=EntityHp(hp=1, max_hp=1),
+            action=EnemyActionEnum.WAIT,
+            previous_action=EnemyActionEnum.WAIT,
+            next_weapon=None,
+            first_turn=False,
+            elite_type=EnemyEliteEnum.NOT_ELITE,
+            pattern_index=0,
+            attack_queue=[],
+        )
+
     def clone(self):
         return Enemy(
             enemy_id=self.enemy_id,
@@ -73,7 +107,7 @@ class Enemy(Entity):
             hp=self.hp.clone(),
             action=self.action,
             previous_action=self.previous_action,
-            next_weapon=self.next_weapon.clone(),
+            next_weapon=self.next_weapon.clone() if self.next_weapon is not None else None,
             first_turn=self.first_turn,
             elite_type=self.elite_type,
             pattern_index=self.pattern_index,
@@ -115,11 +149,13 @@ class Enemy(Entity):
 
     def is_good_prediction(self, other, debug: bool = False):
         name = self.get_name()
+        facing_matters = not self.is_thorns()
         result = self.entity_type == other.entity_type and \
                  self.enemy_id == other.enemy_id and \
                  self.elite_type == other.elite_type and \
                  self.state.is_equal(other.state) and \
-                 self.position.is_equal(other.position) and \
+                 self.position.is_equal(other.position, facing_matters) and \
+                 self.first_turn == other.first_turn and \
                  self.hp.is_equal(other.hp)
         # if not debug:
         #     return result
@@ -135,9 +171,15 @@ class Enemy(Entity):
             else:
                 logger.queue_debug_error(f"wrong enemy id ({name}) self {self.enemy_id} other{other.enemy_id}")
             return False
+        if self.first_turn != other.first_turn:
+            if debug:
+                raise PredictionError(f"wrong first turn ({name}) self {self.first_turn} other{other.first_turn}")
+            else:
+                logger.queue_debug_error(f"wrong first turn ({name}) self {self.first_turn} other{other.first_turn}")
+            return False
         if debug:
             other_checks = self.state.is_equal(other.state, debug=name) and \
-                           self.position.is_equal(other.position, debug=name) and \
+                           self.position.is_equal(other.position, facing_matters, debug=name) and \
                            self.hp.is_equal(other.hp, debug=name)
         else:
             other_checks = self.state.is_equal(other.state, debug=None) and \
@@ -157,7 +199,7 @@ class Enemy(Entity):
         return f"{enemy_elite + ' ' if len(enemy_elite) else ''}{enemy_name_mapper[self.enemy_id]} {hp} [{state}]"
 
     def short_print(self) -> str:
-        position = f"cell {self.position.cell}" #, facing {'right' if self.position.facing == 1 else 'left'}"
+        position = f"cell {self.position.cell}"  # , facing {'right' if self.position.facing == 1 else 'left'}"
         return f"{self.get_name()} {position}"
 
     def pretty_print(self) -> str:
@@ -204,6 +246,9 @@ class Enemy(Entity):
     def is_reactive(self):
         return self.elite_type == EnemyEliteEnum.REACTIVE_SHIELD
 
+    def is_thorns(self) -> bool:
+        return self.enemy_id == EnemyEnum.THORNS
+
     def is_boss(self):
         return self.enemy_id in [
             EnemyEnum.REI,
@@ -225,6 +270,9 @@ class Enemy(Entity):
 
     def hit_clone(self, weapon: Weapon, twin_target) -> int:
         if self.enemy_id != EnemyEnum.THE_TWINS_B:
+            return 0
+        if twin_target is None:
+            # happens when Twin B has already died
             return 0
         weapon_clone = weapon.clone()
         if weapon.attack_effect is None:

@@ -1,16 +1,14 @@
-from typing import Dict, List
+from typing import Dict, Optional
 
 from constants import SKILL_LEVELS, SKILLS
 from data.skill.skill_enums import SkillEnum
 
 
-class Skill:
-    skill_type: SkillEnum
-    level: int
+class Skills:
+    skills: Dict[SkillEnum, int]
 
-    def __init__(self, skill_type: SkillEnum, level: int):
-        self.skill_type = skill_type
-        self.level = level
+    def __init__(self, skills: Dict[SkillEnum, int] = None):
+        self.skills = skills or {}
 
     @staticmethod
     def from_dict(source: Dict):
@@ -18,7 +16,13 @@ class Skill:
         levels = source.get(SKILL_LEVELS, [])
         if len(skills) != len(levels):
             raise ValueError("Skills and skill levels have to have the same length")
-        retval: List[Skill] = []
+        retval: Dict[SkillEnum, int] = {}
         for i in range(len(skills)):
-            retval.append(Skill(skill_type=SkillEnum(skills[i]), level=levels[i]))
-        return retval
+            retval[SkillEnum(skills[i])] = levels[i]
+        return Skills(retval)
+
+    def has_skill(self, skill: SkillEnum) -> bool:
+        return self.skills.get(skill) is not None
+
+    def skill_level(self, skill: SkillEnum) -> Optional[int]:
+        return self.skills.get(skill)

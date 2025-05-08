@@ -9,13 +9,15 @@ from data.entity.entity_hp import EntityHp
 from data.entity.entity_position import EntityPosition
 from data.entity.entity_state import EntityState
 from data.entity.hero import Hero
+from data.skill.skill_enums import SkillEnum
+from data.skill.skills import Skills
 from data.weapon.weapon import Weapon
 from data.weapon.weapon_enums import WeaponEnum, WeaponAttackEffectEnum
 
 
 class EntityConstructor:
     @staticmethod
-    def from_dict(source: Dict, hero: bool = False):
+    def from_dict(source: Dict, hero: bool = False, skills: Skills = None):
         entity_state = source.get(ENTITY_STATE, {})
         shield = entity_state.get(SHIELD, False)
         curse = entity_state.get(CURSE, False)
@@ -34,6 +36,7 @@ class EntityConstructor:
             entity_id = source.get(HERO_ENUM)
             attack_queue = [Weapon.from_dict(x) for x in source.get(ATTACK_QUEUE, [])]
             special_move_cooldown = source.get(SPECIAL_MOVE_COOLDOWN, 0)
+            has_reactive_shield = skills.has_skill(SkillEnum.REACTIVE_SHIELD)
 
             return Hero(
                 hero_id=HeroEnum(entity_id),
@@ -42,6 +45,7 @@ class EntityConstructor:
                 hp=hp,
                 attack_queue=attack_queue,
                 special_move_cooldown=special_move_cooldown,
+                has_reactive_shield=has_reactive_shield,
             )
         else:
             entity_id = source.get(ENEMY)
@@ -96,12 +100,12 @@ class EntityConstructor:
         )
 
     @staticmethod
-    def trap(cell):
+    def barricade(cell: int):
         return Enemy(
-            enemy_id=EnemyEnum.TRAP,
+            enemy_id=EnemyEnum.BARRICADE,
             state=EntityState.fresh(),
-            position=EntityPosition(cell, 1),
-            hp=EntityHp(hp=1, max_hp=1),
+            position=EntityPosition(cell=cell, facing=1),
+            hp=EntityHp(hp=5, max_hp=5),
             action=EnemyActionEnum.WAIT,
             previous_action=EnemyActionEnum.WAIT,
             next_weapon=None,

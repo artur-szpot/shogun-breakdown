@@ -24,11 +24,12 @@ enemy_name_mapper = {
     EnemyEnum.KABUKAI: "Kabukai",
     EnemyEnum.SHINOBI: "Shinobi",
     EnemyEnum.GRAPPLER: "Grappler",
-    EnemyEnum.GRAPPLER_ALT: "Grappler",
+    EnemyEnum.SHIELDER: "Shielder", # TODO: is it really
     EnemyEnum.SUMMONER: "Summoner",
     EnemyEnum.SUMMONER_ALT: "Summoner",
     EnemyEnum.THORNS: "Thorns",
     EnemyEnum.SHADOW_CHARGER: "Shadow Charger",
+    EnemyEnum.SWAPPER: "Swapper",
     EnemyEnum.CORRUPTED_PROGENY: "Corrupted Progeny",
     EnemyEnum.THE_TWINS: "The Twins",
     EnemyEnum.THE_TWINS_A: "The A Twin",
@@ -44,9 +45,22 @@ enemy_name_mapper = {
     EnemyEnum.KOWA: "Kowa the Coward",
     EnemyEnum.SATO: "Sato the Stagemaster",
     EnemyEnum.HIDEYOSHI: "Hideyoshi the Cunning",
-    EnemyEnum.IEIASU: "Ieiasu the Cruel",
-    EnemyEnum.DAISUKE: "Corrupted Daisuke",
-    EnemyEnum.TRAP: "Trap",
+    EnemyEnum.IEIASU: "Ieiasu the Patient",
+    EnemyEnum.DAISUKE: "Daisuke the Dasher",
+    EnemyEnum.THE_TWINS_CORRUPTED: "Corrupted Twins",
+    EnemyEnum.THE_TWINS_A_CORRUPTED: "Corrupted A Twin",
+    EnemyEnum.THE_TWINS_B_CORRUPTED: "Corrupted B Twin",
+    EnemyEnum.NOBUNAGA_CORRUPTED: "Corrupted Nobunaga",
+    EnemyEnum.FUMIKO_CORRUPTED: "Corrupted Fumiko",
+    EnemyEnum.THE_STATUE_CORRUPTED: "Corrupted Statue",
+    EnemyEnum.REI_CORRUPTED: "Corrupted Rei",
+    EnemyEnum.IWAO_CORRUPTED: "Corrupted Iwao",
+    EnemyEnum.BARU_CORRUPTED: "Corrupted Baru",
+    EnemyEnum.KOWA_CORRUPTED: "Corrupted Kowa",
+    EnemyEnum.SATO_CORRUPTED: "Corrupted Sato",
+    EnemyEnum.HIDEYOSHI_CORRUPTED: "Corrupted Hideyoshi",
+    EnemyEnum.IEIASU_CORRUPTED: "Corrupted Ieiasu",
+    EnemyEnum.DAISUKE_CORRUPTED: "Corrupted Daisuke",
 }
 
 room_boss_mapper = {
@@ -61,6 +75,21 @@ room_boss_mapper = {
     RoomEnum.HIDEYOSHI: enemy_name_mapper[EnemyEnum.HIDEYOSHI],
     RoomEnum.NOBUNAGA: enemy_name_mapper[EnemyEnum.NOBUNAGA],
     RoomEnum.IEIASU: enemy_name_mapper[EnemyEnum.IEIASU],
+    RoomEnum.SHOGUN: enemy_name_mapper[EnemyEnum.THE_SHOGUN],
+}
+
+room_corrupted_boss_mapper = {
+    RoomEnum.BAMBOO_GROVE: enemy_name_mapper[EnemyEnum.REI_CORRUPTED],
+    RoomEnum.WHISPERING_CAVES: enemy_name_mapper[EnemyEnum.IWAO_CORRUPTED],
+    RoomEnum.HIBIKU_WASTELANDS: enemy_name_mapper[EnemyEnum.BARU_CORRUPTED],
+    RoomEnum.MOONLIT_PORT: enemy_name_mapper[EnemyEnum.THE_TWINS_CORRUPTED],
+    RoomEnum.SPIRIT_GATEWAY: enemy_name_mapper[EnemyEnum.THE_STATUE_CORRUPTED],
+    RoomEnum.HOT_SPRINGS: enemy_name_mapper[EnemyEnum.KOWA_CORRUPTED],
+    RoomEnum.FORSAKEN_GROUNDS: enemy_name_mapper[EnemyEnum.FUMIKO_CORRUPTED],
+    RoomEnum.THEATRE_OF_SHADOWS: enemy_name_mapper[EnemyEnum.SATO_CORRUPTED],
+    RoomEnum.HIDEYOSHI: enemy_name_mapper[EnemyEnum.HIDEYOSHI_CORRUPTED],
+    RoomEnum.NOBUNAGA: enemy_name_mapper[EnemyEnum.NOBUNAGA_CORRUPTED],
+    RoomEnum.IEIASU: enemy_name_mapper[EnemyEnum.IEIASU_CORRUPTED],
     RoomEnum.SHOGUN: enemy_name_mapper[EnemyEnum.THE_SHOGUN],
 }
 

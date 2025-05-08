@@ -74,11 +74,13 @@ def is_good_prediction(actual_snapshot: Snapshot, simulation: Simulation, debug:
     # Check simple values.
     if not Weapon.is_list_equal(actual_snapshot.hero_deck, simulation.hero_deck):
         if debug:
+            what = "nothing?"
             if len(actual_snapshot.hero_deck) != len(simulation.hero_deck):
                 what = f"wrong len {len(actual_snapshot.hero_deck)} vs {len(simulation.hero_deck)}"
             for i in range(len(actual_snapshot.hero_deck)):
                 if not actual_snapshot.hero_deck[i].is_equal(simulation.hero_deck[i]):
-                    what = f"wrong weapon #{i}"
+                    what = f"wrong weapon #{i} ({actual_snapshot.hero_deck[i].debug_print()} vs " \
+                            f"{simulation.hero_deck[i].debug_print()})"
             raise PredictionError(f"wrong hero deck state: {what}")
         return False
     if actual_snapshot.game_phase != simulation.game_phase:
@@ -86,25 +88,14 @@ def is_good_prediction(actual_snapshot: Snapshot, simulation: Simulation, debug:
             raise PredictionError(f"wrong game phase")
         return False
 
-    if not actual_snapshot.game_stats.is_good_prediction(simulation.game_stats, simulation.predictions.new_potions,
-                                                         debug):
+    if not actual_snapshot.game_stats.is_good_prediction(
+            simulation.game_stats,
+            simulation.predictions,
+            debug):
         actual_snapshot.game_stats.diff(simulation.game_stats, simulation.predictions.new_potions)
         raise PredictionError(f"game stats wrong debug={debug}")
     if not actual_snapshot.room.is_good_prediction(simulation.room, simulation.predictions.summons, debug=True):
         # actual_snapshot.room.diff(simulation.room, simulation.predictions.summons)
-        raise PredictionError("room wrong")
-
-    # Perform complex validations.
-    game_stats = actual_snapshot.game_stats.is_good_prediction(
-        simulation.game_stats,
-        simulation.predictions.new_potions,
-        debug
-    )
-    if not game_stats:
-        raise PredictionError("game stats wrong")
-
-    room = actual_snapshot.room.is_good_prediction(simulation.room, simulation.predictions.summons, debug=True)
-    if not room:
         raise PredictionError("room wrong")
 
     return True

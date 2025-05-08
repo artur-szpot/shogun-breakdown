@@ -3,6 +3,7 @@ from typing import Dict
 from constants import RUN_STATS, HITS, FRIENDLY_KILLS, HEAL_PICKUPS, POTION_PICKUPS, SCROLL_PICKUPS, \
     COMBAT_ROOMS_CLEARED, COMBOS, TURN_AROUNDS, TIME, COINS, TURNS, NEW_TILES_PICKED, CONSUMABLES_USED, DAY, VERSION
 from data.snapshot.prediction_error import PredictionError
+from data.snapshot.predictions import Predictions
 from logger import logger
 
 
@@ -110,6 +111,11 @@ class GameStats:
             new_tiles_picked=self.new_tiles_picked
         )
 
+    def debug_print(self) -> str:
+        return f"ta {self.turn_arounds} $ {self.coins} cmb {self.combos} scr {self.scroll_pickups} " \
+               f"pot {self.potion_pickups} heal {self.heal_pickups} fk {self.friendly_kills} ht {self.hits}" \
+               f"cu {self.consumables_used}"
+
     def is_equal(self, other, debug: bool = False):
         if not debug:
             return self.turn_arounds == other.turn_arounds \
@@ -135,7 +141,7 @@ class GameStats:
             raise PredictionError(f"wrong number of rooms cleared")
         if self.scroll_pickups != other.scroll_pickups:
             raise PredictionError(
-                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
+                f"wrong number of equal scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
         if self.potion_pickups != other.potion_pickups:
             raise PredictionError(
                 f"wrong number of potion pickups self {self.potion_pickups} other {other.potion_pickups}")
@@ -149,25 +155,36 @@ class GameStats:
             raise PredictionError(f"wrong number of consumables used")
         return True
 
-    def is_good_prediction(self, other, new_potions: int, debug: bool = False):
-        result = self.turn_arounds == other.turn_arounds \
-                   and self.coins == other.coins \
-                   and self.combos == other.combos \
-                   and self.turns == other.turns \
-                   and self.combat_rooms_cleared == other.combat_rooms_cleared \
-                   and self.scroll_pickups <= other.scroll_pickups + new_potions \
-                   and self.potion_pickups <= other.potion_pickups + new_potions \
-                   and self.heal_pickups <= other.heal_pickups + new_potions \
-                   and self.scroll_pickups + self.potion_pickups + self.heal_pickups <= \
-                   other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions \
-                   and self.friendly_kills == other.friendly_kills \
-                   and self.hits == other.hits \
-                   and self.consumables_used == other.consumables_used
+    def is_good_prediction(self, other, predictions: Predictions, debug: bool = False):
+        new_potions = predictions.new_potions
+
+        if predictions.allow_more_coins:
+            coins_good = self.coins >= other.coins
+        else:
+            coins_good = self.coins == other.coins
+
+        if predictions.allow_more_turn_arounds:
+            turn_arounds_good = self.turn_arounds >= other.turn_arounds
+        else:
+            turn_arounds_good = self.turn_arounds == other.turn_arounds
+
+        result = turn_arounds_good and coins_good \
+                 and self.combos == other.combos \
+                 and self.turns == other.turns \
+                 and self.combat_rooms_cleared == other.combat_rooms_cleared \
+                 and self.scroll_pickups <= other.scroll_pickups + new_potions \
+                 and self.potion_pickups <= other.potion_pickups + new_potions \
+                 and self.heal_pickups <= other.heal_pickups + new_potions \
+                 and self.scroll_pickups + self.potion_pickups + self.heal_pickups <= \
+                 other.scroll_pickups + other.potion_pickups + other.heal_pickups + new_potions \
+                 and self.friendly_kills == other.friendly_kills \
+                 and self.hits == other.hits \
+                 and self.consumables_used == other.consumables_used
         if not debug:
-            return  result
-        if self.turn_arounds != other.turn_arounds:
+            return result
+        if not turn_arounds_good:
             raise PredictionError(f"wrong number of turn arounds self {self.turn_arounds} other {other.turn_arounds}")
-        if self.coins != other.coins:
+        if not coins_good:
             raise PredictionError(f"wrong number of coins self {self.coins} other {other.coins}")
         if self.combos != other.combos:
             raise PredictionError(f"wrong number of combos self {self.combos} other {other.combos}")
@@ -178,7 +195,7 @@ class GameStats:
                 f"wrong number of rooms cleared self {self.combat_rooms_cleared} other {other.combat_rooms_cleared}")
         if self.scroll_pickups > other.scroll_pickups + new_potions:
             raise PredictionError(
-                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
+                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups} new pots {new_potions}")
         if self.potion_pickups > other.potion_pickups + new_potions:
             raise PredictionError(
                 f"wrong number of potion pickups self {self.potion_pickups} other {other.potion_pickups}")
@@ -215,7 +232,7 @@ class GameStats:
             logger.queue_debug_error(f"wrong number of rooms cleared")
         if self.scroll_pickups > other.scroll_pickups + new_potions:
             logger.queue_debug_error(
-                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups}")
+                f"wrong number of scroll pickups self {self.scroll_pickups} other {other.scroll_pickups} np {new_potions}")
         if self.potion_pickups > other.potion_pickups + new_potions:
             logger.queue_debug_error(
                 f"wrong number of potion pickups self {self.potion_pickups} other {other.potion_pickups}")

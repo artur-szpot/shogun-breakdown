@@ -6,10 +6,11 @@ from history.history import History
 from logger import logger
 
 
-def entered_reward(history: History, previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot
-                   ) -> History:
+def entered_reward(previous_snapshot: Optional[Snapshot], new_snapshot: Snapshot) -> History:
     if previous_snapshot is not None:
-        battle_finished(history, previous_snapshot)
+        history = battle_finished(previous_snapshot)
+    else:
+        history = new_snapshot.history
 
     if previous_snapshot is not None:
         logger.detail_info("== ENTERED REWARD ROOM ==")
@@ -18,14 +19,15 @@ def entered_reward(history: History, previous_snapshot: Optional[Snapshot], new_
     logger.detail_info(f"== {new_snapshot.get_room()} ==")
     logger.detail_text(new_snapshot.reward.pretty_print_reward())
     logger.detail_text(f"Current reroll price: {new_snapshot.reward.current_reroll_price}")
-    logger.line()
+    logger.detail_text("")
 
     return history
 
 
-def reward_update(history: History, previous_snapshot: Snapshot, new_snapshot: Snapshot) -> History:
+def reward_update(previous_snapshot: Snapshot, new_snapshot: Snapshot) -> History:
     old_reward = previous_snapshot.reward
     new_reward = new_snapshot.reward
+    history = previous_snapshot.history
 
     # New tile taken.
     if len(previous_snapshot.hero_deck) < len(new_snapshot.hero_deck):

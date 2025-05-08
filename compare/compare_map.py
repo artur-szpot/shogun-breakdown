@@ -1,8 +1,7 @@
-from history.history import History
 from logger import logger
 
 
-def entered_map(history: History) -> History:
+def entered_map() -> None:
     logger.detail_info("== ENTERED MAP JOURNEY ==")
-    logger.line()
-    return history
+    logger.detail_info("")
+    return

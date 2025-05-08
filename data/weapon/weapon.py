@@ -39,6 +39,18 @@ class Weapon:
         self.tile_effect = tile_effect
 
     @staticmethod
+    def signature_move():
+        return Weapon(
+            weapon_type=WeaponEnum.SIGNATURE_MOVE,
+            cooldown=0,
+            cooldown_charge=0,
+            strength=1,
+            base_strength=1,
+            level=0,
+            max_level=0,
+        )
+
+    @staticmethod
     def corrupted_explosion():
         return Weapon(
             weapon_type=WeaponEnum.CORRUPTED_EXPLOSION,
@@ -46,6 +58,18 @@ class Weapon:
             cooldown_charge=0,
             strength=1,
             base_strength=1,
+            level=0,
+            max_level=0,
+        )
+
+    @staticmethod
+    def corrupted_wave(strength: int):
+        return Weapon(
+            weapon_type=WeaponEnum.CORRUPTED_WAVE,
+            cooldown=0,
+            cooldown_charge=0,
+            strength=strength,
+            base_strength=strength,
             level=0,
             max_level=0,
         )
@@ -123,13 +147,13 @@ class Weapon:
         )
 
     @staticmethod
-    def explosion():
+    def explosion(strength: int):
         return Weapon(
             weapon_type=WeaponEnum.EXPLOSION,
             cooldown=0,
             cooldown_charge=0,
-            strength=2,
-            base_strength=2,
+            strength=strength,
+            base_strength=strength,
             level=0,
             max_level=0,
         )

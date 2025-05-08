@@ -8,12 +8,12 @@ from data.entity.entity_position import EntityPosition
 from data.entity.entity_state import EntityState
 from data.snapshot.prediction_error import PredictionError
 from data.weapon.weapon import Weapon
-from logger import logger
 
 
 class Hero(Entity):
     hero_id: HeroEnum
     special_move_cooldown: int
+    has_reactive_shield: bool
 
     def __init__(self,
                  hero_id: HeroEnum,
@@ -21,7 +21,8 @@ class Hero(Entity):
                  position: EntityPosition,
                  hp: EntityHp,
                  attack_queue: List[Weapon],
-                 special_move_cooldown: int
+                 special_move_cooldown: int,
+                 has_reactive_shield: bool,
                  ):
         super().__init__(
             entity_type=EntityType.HERO,
@@ -32,6 +33,7 @@ class Hero(Entity):
         )
         self.hero_id = hero_id
         self.special_move_cooldown = special_move_cooldown
+        self.has_reactive_shield = has_reactive_shield
 
     def clone(self):
         return Hero(
@@ -41,24 +43,29 @@ class Hero(Entity):
             hp=self.hp.clone(),
             attack_queue=[weapon.clone() for weapon in self.attack_queue],
             special_move_cooldown=self.special_move_cooldown,
+            has_reactive_shield=self.has_reactive_shield,
         )
 
     def is_equal(self, other, debug: bool = False):
         if not debug:
-            # predicted cooldown can be higher by one (no easy way to check the current max)
+            # predicted special cooldown can be higher by one (no easy way to check the current max)
+            # TODO fix this - it CAN be predicted by hero + skills
             return self.entity_type == other.entity_type and \
                    self.hero_id == other.hero_id and \
                    self.state.is_equal(other.state) and \
                    self.position.is_equal(other.position) and \
                    self.hp.is_equal(other.hp) and \
                    Weapon.is_list_equal(self.attack_queue, other.attack_queue) and \
-                   self.special_move_cooldown == other.special_move_cooldown
+                   self.special_move_cooldown in [other.special_move_cooldown, other.special_move_cooldown - 1]
 
         name = hero_name_mapper.get(self.hero_id, f"Unknown hero #{self.hero_id.value}")
         if self.entity_type != other.entity_type:
             raise PredictionError(f"wrong entity type ({name})")
         if self.hero_id != other.hero_id:
             raise PredictionError(f"wrong hero id ({name})")
+        if self.special_move_cooldown not in [other.special_move_cooldown, other.special_move_cooldown - 1]:
+            raise PredictionError(
+                f"wrong special move cooldown ({name}) self {self.special_move_cooldown} other {other.special_move_cooldown}")
         if len(self.attack_queue) != len(other.attack_queue):
             raise PredictionError(
                 f"wrong attack queue length ({name}) self: {Weapon.pretty_print_list(self.attack_queue)} other: {Weapon.pretty_print_list(other.attack_queue)}")
@@ -79,3 +86,6 @@ class Hero(Entity):
     def pretty_print(self) -> str:
         position = f"cell {self.position.cell}, facing {'right' if self.position.facing == 1 else 'left'}"
         return f"{self.get_name()} {position}"
+
+    def is_reactive(self) -> bool:
+        return self.has_reactive_shield

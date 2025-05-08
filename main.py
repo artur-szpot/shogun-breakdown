@@ -11,8 +11,8 @@ def get_time(file):
     return os.stat(file).st_mtime
 
 def main_loop(too_early=False):
-    # save_dir = "C:\\Users\\szpot\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
-    save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    save_dir = "C:\\Users\\szpot\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    # save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
     save_file = "RunSaveData.dat"
     filename = save_dir + "\\" + save_file
 
@@ -26,9 +26,8 @@ def main_loop(too_early=False):
     if too_early:
         logger.debug_success("Run has started")
 
-    previous_snapshot = Snapshot.from_file(filename)
-    history = History(previous_snapshot)
-    compare_snapshots(history, None, previous_snapshot)
+    previous_snapshot = Snapshot.from_file(filename, True)
+    compare_snapshots(None, previous_snapshot)
 
     while True:
         try:
@@ -36,8 +35,9 @@ def main_loop(too_early=False):
             if current_last_edited_time != last_recorded_edited_time:
                 last_recorded_edited_time = current_last_edited_time
                 new_snapshot = Snapshot.from_file(filename)
-                compare_snapshots(history, previous_snapshot, new_snapshot)
+                history = compare_snapshots(previous_snapshot, new_snapshot)
                 previous_snapshot = new_snapshot
+                previous_snapshot.history = history
         except FileNotFoundError:
             logger.line()
             logger.nice_print([MessageType.INFO], "Run finished")
@@ -46,4 +46,12 @@ def main_loop(too_early=False):
 
 if __name__ == '__main__':
     logger.nice_print([MessageType.INFO], 'Welcome to Shugun Breakdown v0.2')
+
+    # TODO remove; temporarily doubled; allows mid-run start
+    logger.splits_info(" ".join([
+        "ROOM".ljust(30),
+        "TURNS".ljust(5),
+        "TIME".rjust(8),
+    ]))
+
     main_loop()

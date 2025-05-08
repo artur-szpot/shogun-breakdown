@@ -45,9 +45,10 @@ class ShopService(ShopItem):
         price_in, service_name = self.print_values()
         return f"{service_name} ({self.price} {price_in}{' (sale!)' if self.on_sale else ''})"
 
-    def sale_print(self):
-        price_in, service_name = self.print_values()
-        return f"Purchased {service_name} for {self.price} {price_in}"
+    @staticmethod
+    def service_sale_print(service):
+        price_in, service_name = service.print_values()
+        return f"Purchased {service_name} for {service.price} {price_in}"
 
     def is_equal(self, other):
         return self.service == other.service \
