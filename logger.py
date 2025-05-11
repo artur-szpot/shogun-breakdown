@@ -63,7 +63,7 @@ class Logger:
 
     def nice_print(self, codes: List[MessageType], message: str) -> None:
         if MessageType.ERROR in codes:
-            color = Back.RED + Fore.WHITE
+            color = Back.RED + Fore.BLACK
         elif MessageType.WARN in codes:
             color = Back.YELLOW
             if MessageType.VARIABLE not in codes:
@@ -71,7 +71,7 @@ class Logger:
         elif MessageType.HELP in codes:
             color = Fore.YELLOW
         elif MessageType.INFO in codes:
-            color = Back.CYAN + Fore.WHITE
+            color = Back.CYAN + Fore.BLACK
         elif MessageType.SUCCESS in codes:
             color = Fore.GREEN
         else:

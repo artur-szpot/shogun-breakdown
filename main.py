@@ -11,8 +11,8 @@ def get_time(file):
     return os.stat(file).st_mtime
 
 def main_loop(too_early=False):
-    save_dir = "C:\\Users\\szpot\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
-    # save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    # save_dir = "C:\\Users\\szpot\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
     save_file = "RunSaveData.dat"
     filename = save_dir + "\\" + save_file
 
@@ -26,6 +26,7 @@ def main_loop(too_early=False):
     if too_early:
         logger.debug_success("Run has started")
 
+    print("load True")
     previous_snapshot = Snapshot.from_file(filename, True)
     compare_snapshots(None, previous_snapshot)
 

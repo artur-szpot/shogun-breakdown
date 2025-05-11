@@ -46,7 +46,7 @@ class WeaponEnum(Enum):
     SHIELD_ALLY = 35
     CORRUPTED_BARRAGE = 36
     SCAR_STRIKE = 37
-    # ARTIFACT: 38 this should be sig. move
+    SIGNATURE_MOVE = 38
     METEOR_HAMMER = 39
     KI_PUSH = 40
     VOLLEY = 41
@@ -65,7 +65,6 @@ class WeaponEnum(Enum):
     CORRUPTED_EXPLOSION = 54
 
     SHARP_TURN = -23
-    SIGNATURE_MOVE = -24
     MAKU = 666  # next stage on sato
 
 

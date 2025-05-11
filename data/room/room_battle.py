@@ -7,7 +7,7 @@ from data.entity.construct_entity import EntityConstructor
 from data.entity.enemy import Enemy
 from data.entity.entity import Entity
 from data.entity.entity_enums import EnemyEnum
-from data.entity.entity_mappers import room_boss_mapper, room_corrupted_boss_mapper, enemy_name_mapper
+from data.entity.entity_mappers import enemy_name_mapper
 from data.entity.hero import Hero
 from data.mappers import room_mapper, pickup_name_mapper, room_number_mapper, boss_room_mapper, room_name_mapper
 from data.room.room_enums import PickupEnum, RoomEnum
@@ -67,7 +67,7 @@ def get_board_size(room: RoomEnum, progression: int, variant: int) -> int:
             4: {0: 9},
             6: {0: 7},
         },
-        RoomEnum.THEATRE_OF_SHADOWS: {
+        RoomEnum.THEATRE_OF_ILLUSIONS: {
             0: {0: 7},
             2: {0: 5},
             4: {0: 9},
@@ -77,7 +77,10 @@ def get_board_size(room: RoomEnum, progression: int, variant: int) -> int:
             0: {0: 7},
             2: {0: 7},
         },
-        RoomEnum.NOBUNAGA: {},
+        RoomEnum.NOBUNAGA: {
+            0: {0: 7},
+            2: {0: 7},
+        },
         RoomEnum.IEIASU: {
             0: {0: 7},
             2: {0: 9},
@@ -254,48 +257,49 @@ class BattleRoom:
                         raise PredictionError(f"wrong enemies in new wave")
                     return False
 
-        # If pickup is predicted, it needs to be there.
-        for loc, pps in other.pickups.items():
-            if loc not in self.pickups:
-                if len(pps) > 1 or PickupEnum.ANY not in pps:
-                    if debug:
-                        raise PredictionError(f"missing predicted pickup location")
-                    return False
-            loc_has_any = PickupEnum.ANY in pps
-            for p_type, total in pps.items():
-                if p_type != PickupEnum.ANY:
-                    if p_type not in self.pickups[loc]:
-                        if debug:
-                            raise PredictionError(f"missing predicted pickup type")
-                        return False
-                    if self.pickups[loc][p_type] > total and not loc_has_any:
-                        if debug:
-                            raise PredictionError(
-                                f"wrong predicted pickup total loc {loc} type {p_type} self {self.pickups[loc][p_type]} other {total}")
-                        return False
-
-        # If pickup is there, it needs to be predicted.
-        self_pickups = [f'{loc}: {", ".join(pickup_name_mapper[pp] for pp in pps)}' for loc, pps in
-                        self.pickups.items()]
-        other_pickups = [f'{loc}: {", ".join(pickup_name_mapper[pp] for pp in pps)}' for loc, pps in
-                         other.pickups.items()]
-        pickup_debug = f"SELF: {', '.join(self_pickups)}, OTHER: {', '.join(other_pickups)}"
-        for loc, pps in self.pickups.items():
-            if loc not in other.pickups:
-                if debug:
-                    raise PredictionError(f"unpredicted pickup location {pickup_debug}")
-                return False
-            for p_type, total in pps.items():
-                if PickupEnum.ANY not in other.pickups[loc]:
-                    if p_type not in other.pickups[loc]:
-                        if debug:
-                            raise PredictionError(f"unpredicted pickup type {p_type.value} {pickup_debug}")
-                        return False
-                    if other.pickups[loc][p_type] != total:
-                        if debug:
-                            raise PredictionError(
-                                f"unpredicted pickup total loc: {loc} type: {p_type.value} total: {total} {pickup_debug}")
-                        return False
+        # NO LONGER RELEVANT - potions handled elsewhere; gold can be handled otherwise
+        # # If pickup is predicted, it needs to be there.
+        # for loc, pps in other.pickups.items():
+        #     if loc not in self.pickups:
+        #         if len(pps) > 1 or PickupEnum.ANY not in pps:
+        #             if debug:
+        #                 raise PredictionError(f"missing predicted pickup location")
+        #             return False
+        #     loc_has_any = PickupEnum.ANY in pps
+        #     for p_type, total in pps.items():
+        #         if p_type != PickupEnum.ANY:
+        #             if p_type not in self.pickups[loc]:
+        #                 if debug:
+        #                     raise PredictionError(f"missing predicted pickup type")
+        #                 return False
+        #             if self.pickups[loc][p_type] > total and not loc_has_any:
+        #                 if debug:
+        #                     raise PredictionError(
+        #                         f"wrong predicted pickup total loc {loc} type {p_type} self {self.pickups[loc][p_type]} other {total}")
+        #                 return False
+        #
+        # # If pickup is there, it needs to be predicted.
+        # self_pickups = [f'{loc}: {", ".join(pickup_name_mapper[pp] for pp in pps)}' for loc, pps in
+        #                 self.pickups.items()]
+        # other_pickups = [f'{loc}: {", ".join(pickup_name_mapper[pp] for pp in pps)}' for loc, pps in
+        #                  other.pickups.items()]
+        # pickup_debug = f"SELF: {', '.join(self_pickups)}, OTHER: {', '.join(other_pickups)}"
+        # for loc, pps in self.pickups.items():
+        #     if loc not in other.pickups:
+        #         if debug:
+        #             raise PredictionError(f"unpredicted pickup location {pickup_debug}")
+        #         return False
+        #     for p_type, total in pps.items():
+        #         if PickupEnum.ANY not in other.pickups[loc]:
+        #             if p_type not in other.pickups[loc]:
+        #                 if debug:
+        #                     raise PredictionError(f"unpredicted pickup type {p_type.value} {pickup_debug}")
+        #                 return False
+        #             if other.pickups[loc][p_type] != total:
+        #                 if debug:
+        #                     raise PredictionError(
+        #                         f"unpredicted pickup total loc: {loc} type: {p_type.value} total: {total} {pickup_debug}")
+        #                 return False
 
         return self.room == other.room and \
                self.progression == other.progression and \
@@ -476,18 +480,22 @@ class BattleRoom:
     def find_connected_targets(self, attacker: Entity, target_cells: List[Optional[int]]) -> Tuple[
         List[int], List[int]]:
         attacker_cell = attacker.position.cell
+        logger.queue_debug_text(
+            f"Looking for connected targets. Attacker cell: {attacker_cell}, targets: {target_cells}")
         shock_targets = set()
         direct_targets = self.find_targets(target_cells)
+        logger.queue_debug_text(f"Targets found: {[e.short_print() for e in direct_targets]}")
         for direct_target in direct_targets:
             current_cell = direct_target.position.cell
             while True:
                 current_cell += 1
                 if not self.is_legal_position(current_cell):
                     break
-                if current_cell in shock_targets:
+                if current_cell in shock_targets or current_cell == attacker_cell:
                     continue
-                if len(self.find_targets([current_cell])) > 0 and current_cell != attacker_cell:
-                    shock_targets.add(current_cell)
+                if not len(self.find_targets([current_cell])) > 0:
+                    break
+                shock_targets.add(current_cell)
             current_cell = direct_target.position.cell
             while True:
                 current_cell -= 1
@@ -495,8 +503,9 @@ class BattleRoom:
                     break
                 if current_cell in shock_targets or current_cell == attacker_cell:
                     continue
-                if len(self.find_targets([current_cell])) > 0:
-                    shock_targets.add(current_cell)
+                if not len(self.find_targets([current_cell])) > 0:
+                    break
+                shock_targets.add(current_cell)
         return [dt.position.cell for dt in direct_targets], list(shock_targets)
 
     def hit_entities(self, attacker: Entity, target_cells: List[Optional[int]], weapon: Weapon,

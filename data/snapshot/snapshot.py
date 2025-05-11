@@ -10,10 +10,10 @@ from data.other_enums import GamePhase
 from data.room.room_battle import BattleRoom
 from data.room.room_reward import RewardRoom
 from data.shop.room_shop import ShopRoom
-from data.skill.skill_enums import SkillEnum
 from data.skill.skills import Skills
 from data.weapon.weapon import Weapon
 from history.history import History
+from history.history_potions import PotionSnapshot
 from logger import logger
 
 
@@ -104,3 +104,14 @@ class Snapshot:
             if shop_name is None:
                 raise ValueError(f"Unknown shop name: {self.shop.location}")
             return shop_name
+
+    def potion_snapshot(self) -> PotionSnapshot:
+        return PotionSnapshot(
+            coins=self.game_stats.coins,
+            potions_ids=self.hero_potion_ids,
+            ground_potions=self.room.pickups,
+            total_used=self.game_stats.consumables_used,
+            total_scrolls_dropped=self.game_stats.scroll_pickups,
+            total_potions_dropped=self.game_stats.potion_pickups,
+            total_heals_dropped=self.game_stats.heal_pickups
+        )

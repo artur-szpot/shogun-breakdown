@@ -46,8 +46,8 @@ shop_item_mapper = {
     "ChikaraCrushShopItem": ShopSkill.of(SkillEnum.CHIKARA_CRUSH),
     "MamushiMoveShopItem": ShopSkill.of(SkillEnum.MAMUSHI_MOVE),
     "TwoFacedDangerShopItem": ShopSkill.of(SkillEnum.TWO_FACED_DANGER),
-    "FenghuangsFeatherShopItem": ShopSkill.of(SkillEnum.FENGHUANGS_FEATHER),
-    "SeiryusScaleShopItem": ShopSkill.of(SkillEnum.SEIRUYS_SCALE),
+    "FenghuangFeatherShopItem": ShopSkill.of(SkillEnum.FENGHUANGS_FEATHER),
+    "SeiryuScaleShopItem": ShopSkill.of(SkillEnum.SEIRUYS_SCALE),
 
     "EdamameBrewShopItem": ShopItem.edamame(),
 

@@ -3,8 +3,10 @@ from enum import Enum
 
 class SkillEnum(Enum):
     BACK_STABBER = 1001
+    # ARTIFACT: 1002
     UNFRIENDLY_FIRE = 1003
     SNIPER = 1004
+    MINDFULLNESS = 1005
     MONOMANCER = 1006
     CLOSE_COMBAT = 1007
     CENTRAL_DOMINION = 1008
@@ -22,20 +24,21 @@ class SkillEnum(Enum):
     KARMA = 3005
     CHILLING_BLOOD = 3007
     IRON_SKIN = 3008
+    OVERFLOW_GUARD = 3009
 
+    TWO_WAY_MOVE = 4001
     QUICK_RECOVERY = 4002
     DAMAGING_MOVE = 4003 # done
     DYNAMIC_BOOST = 4005
     CURSING_MOVE = 4006 # done
+    MAMUSHI_MOVE = 4008 # done
     TWO_FACED_DANGER = 4009
 
     FENGHUANGS_FEATHER = 5001
+    SEIRUYS_SCALE = 5002
 
     BIG_POCKETS = 9002
     ROGUE_RETAIL = 9003
-
-    # attack
-    MINDFULLNESS = -3
 
     # combo
     ODD_CURSE = -11 # no need to cover -- affects newly spawning enemies anyway
@@ -44,12 +47,6 @@ class SkillEnum(Enum):
     # guard
     FORTRESS = -21
     SHIELD_RETENTION = -23
-    OVERFLOW_GUARD = -27
 
     # dancer
-    TWO_WAY_MOVE = -28
     CHIKARA_CRUSH = -33
-    MAMUSHI_MOVE = -34 # done
-
-    # ??? moonlit?
-    SEIRUYS_SCALE = -37

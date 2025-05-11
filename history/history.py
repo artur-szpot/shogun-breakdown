@@ -35,4 +35,5 @@ class History:
         history.room.corrupted_waves = [wave.clone() for wave in self.room.corrupted_waves]
         history.room.bombs = self.room.bombs.copy()
         history.room.thorns = {cell: weapon.clone() for cell, weapon in self.room.thorns.items()}
+        history.potions = self.potions.clone()
         return history

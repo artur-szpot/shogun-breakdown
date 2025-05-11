@@ -15,7 +15,6 @@ skill_price_mapper = {
     SkillEnum.DAMAGING_MOVE: 15,
     SkillEnum.KOBUSHI_COMBO: 15,
     SkillEnum.TRIPLE_COMBO_HEAL: 20,
-    SkillEnum.SHIELD_RETENTION: 15,
     SkillEnum.HEALTHY: 15,
     SkillEnum.CHILLING_COMBO: 20,
     SkillEnum.CHILLING_BLOOD: 15,
@@ -29,18 +28,18 @@ skill_price_mapper = {
     SkillEnum.SNIPER: 15,
     SkillEnum.DYNAMIC_BOOST: 15,
     SkillEnum.MONOMANCER: 20,
-
-    # BUY THESE!
-    SkillEnum.MINDFULLNESS: 20,
     SkillEnum.MAMUSHI_MOVE: 20,
-    SkillEnum.COMBO_RECHARGE: 20,
+    SkillEnum.OVERFLOW_GUARD: 15,
+    SkillEnum.SEIRUYS_SCALE: 20,
+    SkillEnum.TWO_WAY_MOVE:15,
+    SkillEnum.MINDFULLNESS: 20,
 
+    # BUY THESE!,
+    SkillEnum.COMBO_RECHARGE: 20,
+    SkillEnum.SHIELD_RETENTION: 15,
     SkillEnum.ODD_CURSE: -1,
     SkillEnum.FORTRESS: -1,
-    SkillEnum.OVERFLOW_GUARD: -1,
-    SkillEnum.TWO_WAY_MOVE: -1,
     SkillEnum.CHIKARA_CRUSH: -1,
-    SkillEnum.SEIRUYS_SCALE: -1,
 }
 
 shop_types_mapper = {

@@ -1,6 +1,8 @@
-from typing import List
+from typing import List, Dict
 
+from data.room.room_enums import PickupEnum
 from data.weapon.weapon import Weapon
+from history.history_potions import PotionSimulation
 
 
 class Predictions:
@@ -12,6 +14,7 @@ class Predictions:
     new_potions: int
     allow_more_coins: bool
     allow_more_turn_arounds: bool
+    potion_simulation: PotionSimulation
 
     def __init__(self,
                  potential_hero_attack_queues: List[List[Weapon]] = None,
@@ -21,7 +24,8 @@ class Predictions:
                  enemies_cleared: bool = False,
                  new_potions: int = 0,
                  allow_more_coins: bool = False,
-                 allow_more_turn_arounds: bool=False,
+                 allow_more_turn_arounds: bool = False,
+                 potion_simulation: PotionSimulation = None,
                  ):
         self.potential_hero_attack_queues = potential_hero_attack_queues or []
         self.potential_hero_decks = potential_hero_decks or []
@@ -31,6 +35,7 @@ class Predictions:
         self.new_potions = new_potions
         self.allow_more_coins = allow_more_coins
         self.allow_more_turn_arounds = allow_more_turn_arounds
+        self.potion_simulation = potion_simulation or PotionSimulation()
 
     def clone(self):
         # The weapons in here won't be interacted with, so don't need cloning.
@@ -43,4 +48,5 @@ class Predictions:
             new_potions=self.new_potions,
             allow_more_coins=self.allow_more_coins,
             allow_more_turn_arounds=self.allow_more_turn_arounds,
+            potion_simulation=self.potion_simulation,
         )

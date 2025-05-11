@@ -32,7 +32,7 @@ def shop_update(previous_snapshot: Snapshot, new_snapshot: Snapshot) -> History:
     new_service = new_shop.get_service()
 
     # Potion update
-    new_potion_ids = history.potions.shop_update(previous_snapshot, new_snapshot)
+    # new_potion_ids = history.potions.shop_update(previous_snapshot, new_snapshot)
 
     # Was the shop restocked?
     was_restocked = len(new_shop.items) > len(old_shop.items) \
@@ -47,13 +47,13 @@ def shop_update(previous_snapshot: Snapshot, new_snapshot: Snapshot) -> History:
                     or not isinstance(new_shop.items[index], type(old_item)) \
                     or not old_item.is_equal(new_shop.items[index]):
                 logger.detail_success(old_item.sale_print())
-                if old_item.edamame:
-                    history.potions.queue_potion([PickupEnum.EDAMAME_BREW])
-                    history.potions.shop_update(previous_snapshot, new_snapshot)
+                # if old_item.edamame:
+                #     history.potions.queue_potion([PickupEnum.EDAMAME_BREW])
+                #     history.potions.shop_update(previous_snapshot, new_snapshot)
                 return history
 
     # Potion update
-    history.potions.process_queue(new_potion_ids)
+    # history.potions.process_queue(new_potion_ids)
 
     # Restock update
     if was_restocked:

@@ -20,6 +20,7 @@ from data.snapshot.predictions import Predictions
 from data.snapshot.snapshot import Snapshot
 from data.weapon.weapon import Weapon
 from data.weapon.weapon_enums import WeaponEnum, WeaponAttackEffectEnum
+from history.history_potions import PotionSimulation
 from logger import logger
 
 
@@ -64,20 +65,50 @@ class Simulation(Snapshot):
         simulation.history = snapshot.history.clone(snapshot)
         return simulation
 
-    def clone_simulation(self):
-        simulation = Simulation(
-            skills=self.skills,  # can be copied, cannot change during battle
-            game_stats=self.game_stats.clone(),  # reconstructed
-            hero_deck=[weapon.clone() for weapon in self.hero_deck],  # reconstructed
-            hero_potion_ids=self.hero_potion_ids[:],  # reconstructed
-            game_phase=self.game_phase,  # can be copied, cannot change during battle
-            room=self.room.clone(),  # reconstructed
-            shop=self.shop,  # can be copied, cannot change during battle
-            reward=self.reward,  # can be copied, cannot change during battle
-            predictions=self.predictions.clone(),
-        )
-        simulation.history = self.history.clone(self)
-        return simulation
+    # def clone_simulation(self):
+    #     simulation = Simulation(
+    #         skills=self.skills,  # can be copied, cannot change during battle
+    #         game_stats=self.game_stats.clone(),  # reconstructed
+    #         hero_deck=[weapon.clone() for weapon in self.hero_deck],  # reconstructed
+    #         hero_potion_ids=self.hero_potion_ids[:],  # reconstructed
+    #         game_phase=self.game_phase,  # can be copied, cannot change during battle
+    #         room=self.room.clone(),  # reconstructed
+    #         shop=self.shop,  # can be copied, cannot change during battle
+    #         reward=self.reward,  # can be copied, cannot change during battle
+    #         predictions=self.predictions.clone(),
+    #     )
+    #     simulation.history = self.history.clone(self)
+    #     return simulation
+
+    def apply_potion_simulation(self, potion_simulation: PotionSimulation):
+        for used in potion_simulation.used:
+            logger.queue_debug_text(f"applying potion {used}")
+            self.game_stats.consumables_used += 1
+            if used == PickupEnum.EDAMAME_BREW:
+                self.room.hero.hp.hp = min(self.room.hero.hp.hp+3, self.room.hero.hp.max_hp)
+            elif used == PickupEnum.KAMI_BREW:
+                self.room.hero.state.shield = True
+            elif used == PickupEnum.COOL_UP:
+                self.room.hero.special_move_cooldown = 5 # TODO PRIORITY SPECIALL COOLDOWN CALC
+                for weapon in self.hero_deck:
+                    weapon.cooldown_charge = weapon.cooldown
+            elif used == PickupEnum.LUCKY_DIE:
+                # TODO too difficult for now; turn arounds, actions changes?
+                pass
+            elif used == PickupEnum.MASS_ICE:
+                for enemy in self.room.enemies:
+                    enemy.state.ice = 4
+            elif used == PickupEnum.MASS_POISON:
+                for enemy in self.room.enemies:
+                    enemy.state.poison = 3
+            elif used == PickupEnum.MASS_CURSE:
+                for enemy in self.room.enemies:
+                    enemy.state.curse = True
+            elif used == PickupEnum.RAIN_OF_MIRRORS:
+                for enemy in self.room.enemies:
+                    enemy.position.flip()
+            else:
+                raise ValueError(f"Unexpected potion type used: {used}")
 
     @staticmethod
     def simulation_move_right(snapshot: Snapshot, predictions: Optional[Predictions] = None):
@@ -129,9 +160,19 @@ class Simulation(Snapshot):
         # TODO turn around twice and get hit with a skill
 
     @staticmethod
-    def simulation_wait(snapshot: Snapshot, predictions: Optional[Predictions] = None):
+    def simulation_idle(snapshot: Snapshot, predictions: Optional[Predictions] = None):
         simulation = Simulation.of(snapshot, predictions)
         simulation.simulate_passing_turn()
+        return simulation
+
+    @staticmethod
+    def simulation_wait(snapshot: Snapshot, predictions: Optional[Predictions] = None):
+        simulation = Simulation.simulation_idle(snapshot, predictions)
+        if simulation.skills.has_skill(SkillEnum.MINDFULLNESS):
+            simulation.room.hero.special_move_cooldown += 1
+            for weapon in simulation.hero_deck:
+                if weapon.cooldown_charge < weapon.cooldown:
+                    weapon.cooldown_charge += 1
         return simulation
 
     @staticmethod
@@ -157,7 +198,7 @@ class Simulation(Snapshot):
 
     @staticmethod
     def simulation_adding_weapon_to_queue(snapshot: Snapshot, weapon: Weapon):
-        simulation = Simulation.simulation_wait(snapshot)
+        simulation = Simulation.simulation_idle(snapshot)
         possible_attack_queues = permutate_possible_attack_queues_with_new_weapon(
             attack_queue=simulation.room.hero.attack_queue,
             hero_deck=simulation.hero_deck,
@@ -373,28 +414,31 @@ class Simulation(Snapshot):
                 [self.room.get_first_target_space_ahead(attacker)],
             )
             all_targets: List[int] = direct_targets + shock_targets
-            if attacker.position.facing == 1:
-                new_cell = max(all_targets) + 1
-            else:
-                new_cell = min(all_targets) - 1
-            if self.room.is_legal_position(new_cell):
-                hit_data = self.simulate_move(attacker, new_cell, dash=True)
-                hit_data2 = self.room.hit_entities(attacker, all_targets, weapon)
-                hit_data.merge(hit_data2)
+            logger.queue_debug_text(f"all targets: {all_targets}")
+            if len(all_targets):
+                if attacker.position.facing == 1:
+                    new_cell = max(all_targets) + 1
+                else:
+                    new_cell = min(all_targets) - 1
+                if self.room.is_legal_position(new_cell):
+                    hit_data = self.simulate_move(attacker, new_cell, dash=True)
+                    hit_data2 = self.room.hit_entities(attacker, all_targets, weapon)
+                    hit_data.merge(hit_data2)
         elif weapon.weapon_type == WeaponEnum.BACK_SHADOW_DASH:
             direct_targets, shock_targets = self.room.find_connected_targets(
                 attacker,
                 [self.room.get_first_target_space_behind(attacker)],
             )
             all_targets: List[int] = direct_targets + shock_targets
-            if attacker.position.facing == 1:
-                new_cell = min(all_targets) - 1
-            else:
-                new_cell = max(all_targets) + 1
-            if self.room.is_legal_position(new_cell):
-                hit_data = self.simulate_move(attacker, new_cell, dash=True)
-                hit_data2 = self.room.hit_entities(attacker, all_targets, weapon)
-                hit_data.merge(hit_data2)
+            if len(all_targets):
+                if attacker.position.facing == 1:
+                    new_cell = min(all_targets) - 1
+                else:
+                    new_cell = max(all_targets) + 1
+                if self.room.is_legal_position(new_cell):
+                    hit_data = self.simulate_move(attacker, new_cell, dash=True)
+                    hit_data2 = self.room.hit_entities(attacker, all_targets, weapon)
+                    hit_data.merge(hit_data2)
         elif weapon.weapon_type == WeaponEnum.SMOKE_BOMB:
             target = self.room.get_first_target_space_ahead(attacker)
             target_entity = self.room.find_targets([target])
@@ -576,21 +620,21 @@ class Simulation(Snapshot):
 
     def execute_hookblade(self, attacker: Entity, weapon: Weapon, previous_hero_cell: int) -> None:
         # Find the target and hit it.
-        target_space = self.room.get_first_target_space_ahead(attacker)
-        target_entity = self.room.find_targets([target_space])
+        target_spaces = attacker.position.get_spaces([1])
+        target_entity = self.room.find_targets(target_spaces)
 
         # If no target, stop.
         if len(target_entity) == 0:
             return
 
         # Hit the target and clean up.
-        hit_data = self.room.hit_entities(attacker, [target_space], weapon, self.simulate_move)
+        hit_data = self.room.hit_entities(attacker, target_spaces, weapon, self.simulate_move)
         self.execute_weapon_aftermath(attacker, weapon, previous_hero_cell, hit_data)
 
         # If the target died, move.
-        target_entity = self.room.find_targets([target_space])
+        target_entity = self.room.find_targets(target_spaces)
         if len(target_entity) == 0:
-            self.simulate_move(attacker, target_space)
+            self.simulate_move(attacker, target_spaces[0])
             # If there's strength left, continue attacking.
             if weapon.strength > 0:
                 updated_hookblade = weapon.clone()
@@ -689,7 +733,6 @@ class Simulation(Snapshot):
             self.simulate_move(self.room.hero, new_cell, dash=True)
 
         # apply poison, damage, curse etc.
-        # TODO assumption: this works for the tile version too
         if self.skills.has_skill(SkillEnum.DAMAGING_MOVE):
             for target in targets:
                 target.hit(Weapon.signature_move(), None)
@@ -715,15 +758,16 @@ class Simulation(Snapshot):
             if mover.is_hero():
                 # Pick up pickups.
                 if temp_cell in self.room.pickups:
+                    # TODO clean out "ANY" potion drops
                     updated_pickups = self.simulate_pickups(self.room.pickups[temp_cell])
-                    if updated_pickups is None:
-                        del self.room.pickups[temp_cell]
-                    else:
-                        self.room.pickups[temp_cell] = updated_pickups
-                        if PickupEnum.GOLD in self.room.pickups[temp_cell]:
-                            del self.room.pickups[temp_cell][PickupEnum.GOLD]
-                            if len(self.room.pickups[temp_cell]) == 0:
-                                del self.room.pickups[temp_cell]
+                    # if updated_pickups is None:
+                    #     del self.room.pickups[temp_cell]
+                    # else:
+                    #     self.room.pickups[temp_cell] = updated_pickups
+                    if PickupEnum.GOLD in self.room.pickups[temp_cell]:
+                        del self.room.pickups[temp_cell][PickupEnum.GOLD]
+                        if len(self.room.pickups[temp_cell]) == 0:
+                            del self.room.pickups[temp_cell]
                 # Actually move.
                 mover.position.cell = new_cell
             elif mover.hp.hp > 0:
@@ -744,38 +788,39 @@ class Simulation(Snapshot):
         for pickup_type, total in pickups.items():
             if pickup_type == PickupEnum.GOLD:
                 self.game_stats.coins += total
-            else:
-                for i in range(total):
-                    potions_to_pick_up.append(pickup_type)
-        logger.queue_debug_warn(f"potions top pick up: {potions_to_pick_up}")
-        MAX_POTIONS = 3  # TODO apply the big bag skill
-        if len(potions_to_pick_up) > MAX_POTIONS - len(self.hero_potion_ids):
-            # TODO I will worry about those predictions later (DEEEEEP)
-            return pickups
-        for potion in potions_to_pick_up:
-            self.hero_potion_ids.append(-2 if potion == PickupEnum.ANY else -1)
-            if pickups[potion] > 1:
-                pickups[potion] -= 1
-            else:
-                del pickups[potion]
-            # TODO Add to elixir predictions
-            if potion in [PickupEnum.MASS_ICE, PickupEnum.MASS_CURSE, PickupEnum.MASS_POISON,
-                          PickupEnum.RAIN_OF_MIRRORS]:
-                # self.game_stats.scroll_pickups -= 1
-                # TURNS OUT THESE ARE ROOM TOTALS OF WHAT'S DROPPED
-                pass
-            elif potion in [PickupEnum.COOL_UP, PickupEnum.KAMI_BREW, PickupEnum.LUCKY_DIE]:
-                # self.game_stats.potion_pickups -= 1
-                pass
-            elif potion == PickupEnum.EDAMAME_BREW:
-                # self.game_stats.heal_pickups -= 1
-                pass
-            elif potion == PickupEnum.ANY:
-                # simulate picking up anything
-                pass
-            else:
-                raise ValueError(f"Unexpected potion type: {potion.value}")
-        return pickups if len(pickups) else None
+        return None
+        #     else:
+        #         for i in range(total):
+        #             potions_to_pick_up.append(pickup_type)
+        # logger.queue_debug_warn(f"potions top pick up: {potions_to_pick_up}")
+        # MAX_POTIONS = 3  # TODO apply the big bag skill
+        # if len(potions_to_pick_up) > MAX_POTIONS - len(self.hero_potion_ids):
+        #     # TODO I will worry about those predictions later (DEEEEEP)
+        #     return pickups
+        # for potion in potions_to_pick_up:
+        #     self.hero_potion_ids.append(-2 if potion == PickupEnum.ANY else -1)
+        #     if pickups[potion] > 1:
+        #         pickups[potion] -= 1
+        #     else:
+        #         del pickups[potion]
+        #     # TODO Add to elixir predictions
+        #     if potion in [PickupEnum.MASS_ICE, PickupEnum.MASS_CURSE, PickupEnum.MASS_POISON,
+        #                   PickupEnum.RAIN_OF_MIRRORS]:
+        #         # self.game_stats.scroll_pickups -= 1
+        #         # TURNS OUT THESE ARE ROOM TOTALS OF WHAT'S DROPPED
+        #         pass
+        #     elif potion in [PickupEnum.COOL_UP, PickupEnum.KAMI_BREW, PickupEnum.LUCKY_DIE]:
+        #         # self.game_stats.potion_pickups -= 1
+        #         pass
+        #     elif potion == PickupEnum.EDAMAME_BREW:
+        #         # self.game_stats.heal_pickups -= 1
+        #         pass
+        #     elif potion == PickupEnum.ANY:
+        #         # simulate picking up anything
+        #         pass
+        #     else:
+        #         raise ValueError(f"Unexpected potion type: {potion.value}")
+        # return pickups if len(pickups) else None
 
     def simulate_swap(self, attacker: Entity, target_cell: int, target_required=True,
                       flip_targets=False) -> HitData:
@@ -800,7 +845,6 @@ class Simulation(Snapshot):
         return hit_data
 
     def simulate_passing_turn(self, skip_attack_queue=False) -> None:
-        # "self" is already a simulation at this point
         self.game_stats.turns += 1
         self.room.hero.special_move_cooldown += 1
         self.room.hero.state.pass_turn()
@@ -824,18 +868,6 @@ class Simulation(Snapshot):
         for enemy in self.room.enemies:
             if enemy.enemy_id != EnemyEnum.CORRUPTED_PROGENY:
                 enemy.first_turn = False
-        # Poisons happen first!
-        for enemy in self.room.enemies:
-            if enemy.state.poison > 0:
-                enemy.hit(Weapon.poison_tick(), None)  # TODO this needs to cover the twins too right?
-            enemy.state.pass_turn()
-        self.execute_weapon_aftermath(
-            attacker=self.room.hero,
-            weapon=None,
-            previous_hero_cell=previous_hero_cell,
-            hit_data=HitData.empty(),
-            cause="enemies poison cleanup"
-        )
         # Then corrupted waves and bombs (for now only Hideyoshi can set bombs).
         the_boss = self.room.get_the_boss()
         for wave in self.history.room.corrupted_waves:
@@ -888,12 +920,14 @@ class Simulation(Snapshot):
             if enemy.action == EnemyActionEnum.EXECUTE_QUEUE:
                 if enemy.state.ice == 0:
                     enemies_that_attack.append(enemy)
-        if len(enemies_that_attack) <= 1:
-            logger.queue_debug_text(f"Only {len(enemies_that_attack)} enemies want to attack")
+        # TODO For now presume enemies always attack left-to-right
+        enemy_attack_queue = []
+        for i in range(self.room.board_size):
             for enemy in enemies_that_attack:
-                if enemy.hp.hp <= 0:
-                    continue
-                logger.queue_debug_text(f"EXECUTE {enemy.pretty_print()}")
+                if enemy.position.cell == i:
+                    enemy_attack_queue.append(enemy)
+        for enemy in enemy_attack_queue:
+            if enemy.hp.hp > 0 and enemy.state.ice == 0:
                 for weapon in enemy.attack_queue:
                     if weapon.weapon_type == WeaponEnum.SHIELD_ALLY:
                         # TODO return several possibilities
@@ -904,39 +938,71 @@ class Simulation(Snapshot):
                             weapon=weapon,
                             previous_hero_cell=previous_hero_cell,
                         )
-            if not len(self.room.enemies):
-                self.predictions.enemies_cleared = True
-            return {"": self}
-        logger.queue_debug_text(f"{len(enemies_that_attack)} enemies want to attack!!!")
-        simulation_modes = {
-            "file_order": [enemy.clone() for enemy in enemies_that_attack],
-            "left_to_right": [],
-            "right_to_left": [],
-        }
-        for i in range(self.room.board_size):
-            for enemy in enemies_that_attack:
-                if enemy.position.cell == i:
-                    simulation_modes["left_to_right"].append(enemy.clone())
-                elif enemy.position.cell == self.room.board_size - i - 1:
-                    simulation_modes["right_to_left"].append(enemy.clone())
-        simulations = {}
-        for name, order in simulation_modes.items():
-            simulation = self.clone_simulation()
-            for enemy in order:
-                for weapon in enemy.attack_queue:
-                    if weapon.weapon_type == WeaponEnum.SHIELD_ALLY:
-                        # TODO return several possibilities
-                        pass
-                    else:
-                        simulation.execute_weapon(
-                            attacker=enemy,
-                            weapon=weapon,
-                            previous_hero_cell=previous_hero_cell,
-                        )
-            if not len(simulation.room.enemies):
-                simulation.predictions.enemies_cleared = True
-            simulations[name] = simulation
-        return simulations
+        # Poisons happen LAST!
+        for enemy in self.room.enemies:
+            if enemy.state.poison > 0:
+                enemy.hit(Weapon.poison_tick(), None)  # TODO this needs to cover the twins too right?
+            enemy.state.pass_turn()
+        self.execute_weapon_aftermath(
+            attacker=self.room.hero,
+            weapon=None,
+            previous_hero_cell=previous_hero_cell,
+            hit_data=HitData.empty(),
+            cause="enemies poison cleanup"
+        )
+        if not len(self.room.enemies):
+            self.predictions.enemies_cleared = True
+        return {"": self}
+
+        # if len(enemies_that_attack) <= 1:
+        #     logger.queue_debug_text(f"Only {len(enemies_that_attack)} enemies want to attack")
+        #     for enemy in enemies_that_attack:
+        #         if enemy.hp.hp <= 0:
+        #             continue
+        #         logger.queue_debug_text(f"EXECUTE {enemy.pretty_print()}")
+        #         for weapon in enemy.attack_queue:
+        #             if weapon.weapon_type == WeaponEnum.SHIELD_ALLY:
+        #                 # TODO return several possibilities
+        #                 pass
+        #             else:
+        #                 self.execute_weapon(
+        #                     attacker=enemy,
+        #                     weapon=weapon,
+        #                     previous_hero_cell=previous_hero_cell,
+        #                 )
+        #     if not len(self.room.enemies):
+        #         self.predictions.enemies_cleared = True
+        #     return {"": self}
+        # logger.queue_debug_text(f"{len(enemies_that_attack)} enemies want to attack!!!")
+        # simulation_modes = {
+        #     "file_order": [enemy.clone() for enemy in enemies_that_attack],
+        #     "left_to_right": [],
+        #     "right_to_left": [],
+        # }
+        # for i in range(self.room.board_size):
+        #     for enemy in enemies_that_attack:
+        #         if enemy.position.cell == i:
+        #             simulation_modes["left_to_right"].append(enemy.clone())
+        #         elif enemy.position.cell == self.room.board_size - i - 1:
+        #             simulation_modes["right_to_left"].append(enemy.clone())
+        # simulations = {}
+        # for name, order in simulation_modes.items():
+        #     simulation = self.clone_simulation()
+        #     for enemy in order:
+        #         for weapon in enemy.attack_queue:
+        #             if weapon.weapon_type == WeaponEnum.SHIELD_ALLY:
+        #                 # TODO return several possibilities
+        #                 pass
+        #             else:
+        #                 simulation.execute_weapon(
+        #                     attacker=enemy,
+        #                     weapon=weapon,
+        #                     previous_hero_cell=previous_hero_cell,
+        #                 )
+        #     if not len(simulation.room.enemies):
+        #         simulation.predictions.enemies_cleared = True
+        #     simulations[name] = simulation
+        # return simulations
 
     def get_thorns(self) -> Optional[Weapon]:
         # If memory fails (e.g. started mid-run), find the thorns in hero's deck.
