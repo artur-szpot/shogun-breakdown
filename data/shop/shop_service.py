@@ -5,12 +5,12 @@ from data.shop.shop_item import ShopItem
 class ShopService(ShopItem):
     service: ShopServiceEnum
 
-    def __init__(self, price: int, service: ShopServiceEnum):
-        super().__init__(price)
+    def __init__(self, code: str, price: int, service: ShopServiceEnum):
+        super().__init__(code, price)
         self.service = service
 
     @staticmethod
-    def of(service: ShopServiceEnum):
+    def of(code: str, service: ShopServiceEnum):
         price = -1
         if service == ShopServiceEnum.MONEY_FOR_HP:
             price = 2
@@ -20,7 +20,7 @@ class ShopService(ShopItem):
             price = 70  # TODO gives 15 coins
         elif service == ShopServiceEnum.FULL_HEAL_FOR_SKULLS:
             price = 35
-        return ShopService(price, service)
+        return ShopService(code, price, service)
 
     def sale(self):
         self.on_sale = True

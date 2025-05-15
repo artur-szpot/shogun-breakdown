@@ -149,21 +149,6 @@ upgrade_name_mapper = {
     WeaponUpgradesEnum.WARRIORS_GAMBLE: "Warrior's Gamble",
 }
 
-room_mapper = {
-    "green-combat-1": RoomEnum.BAMBOO_GROVE,
-    "brown-combat-1A": RoomEnum.WHISPERING_CAVES,
-    "brown-combat-1B": RoomEnum.HIBIKU_WASTELANDS,
-    "brown-combat-2": RoomEnum.MOONLIT_PORT,
-    "red-combat-1": RoomEnum.SPIRIT_GATEWAY,
-    "red-combat-2": RoomEnum.HOT_SPRINGS,
-    "purple-combat-1": RoomEnum.FORSAKEN_GROUNDS,
-    "purple-combat-2": RoomEnum.THEATRE_OF_ILLUSIONS,
-    "white-combat-1": RoomEnum.HIDEYOSHI,
-    "gray-combat-1": RoomEnum.NOBUNAGA,
-    "darkGreen-combat-1": RoomEnum.IEIASU,
-    "shogun-combat-1": RoomEnum.SHOGUN,
-}
-
 room_number_mapper = {
     RoomEnum.BAMBOO_GROVE: 1,
     RoomEnum.WHISPERING_CAVES: 2,
@@ -207,23 +192,6 @@ room_name_mapper = {
     RoomEnum.NOBUNAGA: "Nobunaga's Fortress",
     RoomEnum.IEIASU: "Ieiasu's Gardens",
     RoomEnum.SHOGUN: "The Shogun's Castle",
-}
-
-shop_mapper = {
-    "green-shop-1A": ShopEnum.BAMBOO_GROVE_UP,
-    "green-shop-1B": ShopEnum.BAMBOO_GROVE_DOWN,
-    "brown-shop-1A": ShopEnum.BEFORE_MOONLIT_PORT_UP,
-    "brown-shop-1B": ShopEnum.BEFORE_MOONLIT_PORT_CENTER,
-    "brown-shop-1C": ShopEnum.BEFORE_MOONLIT_PORT_DOWN,
-    "brown-combat-2": ShopEnum.MOONLIT_PORT,
-    "red-shop-1A": ShopEnum.SPIRIT_GATEWAY_UP,
-    "red-shop-1B": ShopEnum.SPIRIT_GATEWAY_DOWN,
-    "purple-shop-1A": ShopEnum.FORSAKEN_LANDS_UP,
-    "purple-shop-1B": ShopEnum.FORSAKEN_LANDS_DOWN,
-    "white-shop-1": ShopEnum.HIDEYOSHI,
-    "gray-shop-1": ShopEnum.NOBUNAGA,
-    "darkGreen-shop-1": ShopEnum.IEIASU,
-    "shogun-shop-1": ShopEnum.SHOGUN,
 }
 
 shop_name_mapper = {

@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from constants import REWARD, REWARD_ROOM, TILE_UPGRADE, TILE_REWARDS, EXHAUSTED, REROLL_PRICE, IN_PROGRESS
+from constants import REWARD, REWARD_ROOM, TILE_UPGRADE, TILE_REWARDS, EXHAUSTED, REROLL_PRICE, IN_PROGRESS, PRICE
 from data.mappers import upgrade_name_mapper
 from data.room.room_enums import WeaponUpgradesEnum
 from data.weapon.weapon import Weapon
@@ -37,6 +37,31 @@ class RewardRoom:
             available_tiles=available_tiles,
             available_upgrade=available_upgrade,
         )
+
+    @staticmethod
+    def empty_dict():
+        return {
+            REWARD: {
+                IN_PROGRESS: False,
+                TILE_UPGRADE: 0,
+                TILE_REWARDS: [],
+                PRICE: 0,
+                EXHAUSTED: False,
+            },
+            REROLL_PRICE: 0,
+        }
+
+    def to_dict(self):
+        return {
+            REWARD: {
+                IN_PROGRESS: True,
+                TILE_UPGRADE: self.available_upgrade,
+                TILE_REWARDS: [t.weapon_type.value for t in self.available_tiles],
+                PRICE: 0,
+                EXHAUSTED: self.exhausted,
+            },
+            REROLL_PRICE: self.current_reroll_price,
+        }
 
     def pretty_print_reward(self):
         if self.available_upgrade == 0:

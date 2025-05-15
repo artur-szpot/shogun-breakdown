@@ -304,6 +304,19 @@ class Weapon:
             tile_effect=tile_effect,
         )
 
+    def to_dict(self):
+        return {
+            WEAPON_TYPE: self.weapon_type.value,
+            WEAPON_ATTACK_EFFECT: 0 if self.attack_effect is None else self.attack_effect.value,
+            WEAPON_TILE_EFFECT: 0 if self.tile_effect is None else self.tile_effect.value,
+            COOLDOWN: self.cooldown,
+            COOLDOWN_CHARGE: self.cooldown_charge,
+            STRENGTH: self.strength,
+            BASE_STRENGTH: self.base_strength,
+            LEVEL: self.level,
+            MAX_LEVEL: self.max_level,
+        }
+
     def clone(self):
         return Weapon(
             weapon_type=self.weapon_type,

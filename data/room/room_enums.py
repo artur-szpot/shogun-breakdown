@@ -16,18 +16,18 @@ class PickupEnum(Enum):
 
 
 class RoomEnum(Enum):
-    BAMBOO_GROVE = 10
-    WHISPERING_CAVES = 20
-    HIBIKU_WASTELANDS = 30
-    MOONLIT_PORT = 50
-    SPIRIT_GATEWAY = 60
-    FORSAKEN_GROUNDS = 70
-    HOT_SPRINGS = 80
-    THEATRE_OF_ILLUSIONS = 90
-    HIDEYOSHI = 100
-    NOBUNAGA = 110
-    IEIASU = 120
-    SHOGUN = 130
+    BAMBOO_GROVE = "green-combat-1"
+    WHISPERING_CAVES = "brown-combat-1A"
+    HIBIKU_WASTELANDS = "brown-combat-1B"
+    MOONLIT_PORT = "brown-combat-2"
+    SPIRIT_GATEWAY = "red-combat-1"
+    HOT_SPRINGS = "red-combat-2"
+    FORSAKEN_GROUNDS = "purple-combat-1"
+    THEATRE_OF_ILLUSIONS = "purple-combat-2"
+    HIDEYOSHI = "white-combat-1"
+    NOBUNAGA = "gray-combat-1"
+    IEIASU = "darkGreen-combat-1"
+    SHOGUN = "shogun-combat-1"
 
 
 class WeaponUpgradesEnum(Enum):

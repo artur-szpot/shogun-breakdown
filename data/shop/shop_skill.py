@@ -7,14 +7,14 @@ from data.skill.skill_enums import SkillEnum
 class ShopSkill(ShopItem):
     skill: SkillEnum
 
-    def __init__(self, price: int, skill: SkillEnum):
-        super().__init__(price)
+    def __init__(self, code: str, price: int, skill: SkillEnum):
+        super().__init__(code, price)
         self.skill = skill
 
     @staticmethod
-    def of(skill: SkillEnum):
+    def of(code: str, skill: SkillEnum):
         price = skill_price_mapper.get(skill, -1)
-        return ShopSkill(price, skill)
+        return ShopSkill(code, price, skill)
 
     def sale(self):
         self.on_sale = True

@@ -20,7 +20,7 @@ from data.snapshot.predictions import Predictions
 from data.snapshot.snapshot import Snapshot
 from data.weapon.weapon import Weapon
 from data.weapon.weapon_enums import WeaponEnum, WeaponAttackEffectEnum
-from history.history_potions import PotionSimulation
+from history.potions.history_potions import PotionSimulation
 from logger import logger
 
 
@@ -912,7 +912,7 @@ class Simulation(Snapshot):
                 enemy.position.flip()
             if new_cell is not None:
                 if self.room.is_legal_position(new_cell) and len(self.room.find_targets([new_cell])) == 0:
-                    self.simulate_move(enemy, new_cell)
+                    self.simulate_move(enemy, new_cell, dash=True)
         # Not caring about expanding queue.
         # Attacks happen last.
         enemies_that_attack = []

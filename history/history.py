@@ -5,7 +5,7 @@ from history.history_battle import BattleHistory
 from history.history_deck import DeckHistory
 from history.history_gold import GoldHistory
 from history.history_map import MapHistory
-from history.history_potions import PotionHistory
+from history.potions.history_potions import PotionHistory
 from history.history_room import RoomHistory
 from history.history_skills import SkillsHistory
 
@@ -19,12 +19,12 @@ class History:
     map: MapHistory
     potions: PotionHistory
 
-    def __init__(self, first_snapshot, map_history: Dict):
+    def __init__(self, first_snapshot, map_shops: Dict, corrupted_boss_sectors: List[int]):
         self.gold = GoldHistory()
         self.battles = []
         self.deck = DeckHistory(first_snapshot)
         self.skills = SkillsHistory()
-        self.map = MapHistory(map_history)
+        self.map = MapHistory(map_shops, corrupted_boss_sectors)
         self.potions = PotionHistory(first_snapshot)
         self.room = RoomHistory()
 

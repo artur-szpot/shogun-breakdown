@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from constants import PATTERN_INDEX, ELITE_TYPE, FIRST_TURN, ENEMY_TILE_EFFECT, TILE_TO_PLAY, PREVIOUS_ACTION, ACTION, \
+    ATTACK_QUEUE, FACING, MAX_HP, HP, POISON, ICE, CURSE, SHIELD, ENTITY_STATE, ENEMY, CELL
 from data.entity.entity import Entity
 from data.entity.entity_enums import EnemyEnum, EnemyEliteEnum, EnemyActionEnum, EntityType
 from data.entity.entity_hp import EntityHp
@@ -113,6 +115,29 @@ class Enemy(Entity):
             pattern_index=self.pattern_index,
             attack_queue=[weapon.clone() for weapon in self.attack_queue],
         )
+
+    def to_dict(self):
+        return {
+            ENEMY: self.enemy_id.value,
+            ENTITY_STATE: {
+                SHIELD: self.state.shield,
+                CURSE: self.state.curse,
+                ICE: self.state.ice,
+                POISON: self.state.poison,
+                HP: self.hp.hp,
+                MAX_HP: self.hp.max_hp,
+            },
+            FACING: self.position.facing,
+            CELL: self.position.cell,
+            ATTACK_QUEUE: [weapon.to_dict() for weapon in self.attack_queue],
+            ACTION: self.action.value,
+            PREVIOUS_ACTION: self.previous_action.value,
+            TILE_TO_PLAY: self.next_weapon.weapon_type.value,
+            ENEMY_TILE_EFFECT: 0 if self.next_weapon.tile_effect is None else self.next_weapon.tile_effect.value,
+            FIRST_TURN: self.first_turn,
+            ELITE_TYPE: self.elite_type.value,
+            PATTERN_INDEX: self.pattern_index,
+        }
 
     def is_equal(self, other, debug: bool = False):
         name = self.get_name()

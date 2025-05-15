@@ -50,6 +50,7 @@ class Logger:
     indent: int = 0
     queue: List[Message]
     log_levels: List[LogType]
+    bright_logs: bool = False
 
     def __init__(self):
         """ Initialize the module. Required for Colorama. Called automatically. """
@@ -63,7 +64,7 @@ class Logger:
 
     def nice_print(self, codes: List[MessageType], message: str) -> None:
         if MessageType.ERROR in codes:
-            color = Back.RED + Fore.BLACK
+            color = Back.RED + (Fore.BLACK if self.bright_logs else '')
         elif MessageType.WARN in codes:
             color = Back.YELLOW
             if MessageType.VARIABLE not in codes:
@@ -71,7 +72,7 @@ class Logger:
         elif MessageType.HELP in codes:
             color = Fore.YELLOW
         elif MessageType.INFO in codes:
-            color = Back.CYAN + Fore.BLACK
+            color = Back.CYAN + (Fore.BLACK if self.bright_logs else '')
         elif MessageType.SUCCESS in codes:
             color = Fore.GREEN
         else:

@@ -42,20 +42,6 @@ skill_price_mapper = {
     SkillEnum.CHIKARA_CRUSH: -1,
 }
 
-shop_types_mapper = {
-    "DamageUpgrade": ShopType.DAMAGE,
-    "CooldownUpgrade": ShopType.COOLDOWN,
-    "SacrificeTile": ShopType.SACRIFICE,
-    "WarriorGamble": ShopType.WARRIORS_GAMBLE,
-    "WarringShop": ShopType.WARRING,
-    "ComboShop": ShopType.COMBO,
-    "DancerShop": ShopType.DANCER,
-    "GuardingShop": ShopType.GUARDING,
-    "MaxLevelUpgrade": ShopType.SLOT,
-    "EnchantUpgrade": ShopType.ENCHANT,
-    "MoonlitPortShop": ShopType.MOONLIT_PORT,
-}
-
 shop_type_name_mapper = {
     ShopType.DAMAGE: "Damage",
     ShopType.COOLDOWN: "Cooldown",

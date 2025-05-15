@@ -1,80 +1,11 @@
 from itertools import combinations, combinations_with_replacement
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Tuple, Set
 
 from data.mappers import pickup_name_mapper
 from data.room.room_enums import PickupEnum
+from history.potions.potion_simulation import PotionSimulation
+from history.potions.potion_snapshot import PotionSnapshot
 from logger import logger
-
-
-class PotionSnapshot:
-    coins: int
-    potions_ids: List[int]
-    ground_potions: Dict[int, Dict[PickupEnum, int]]
-    total_used: int
-    total_scrolls_dropped: int
-    total_potions_dropped: int
-    total_heals_dropped: int
-
-    def __init__(
-            self,
-            coins: int,
-            potions_ids: List[int],
-            ground_potions: Dict[int, Dict[PickupEnum, int]],
-            total_used: int,
-            total_scrolls_dropped: int,
-            total_potions_dropped: int,
-            total_heals_dropped: int,
-    ):
-        self.coins = coins
-        self.potions_ids = potions_ids
-        self.ground_potions = ground_potions
-        self.total_used = total_used
-        self.total_scrolls_dropped = total_scrolls_dropped
-        self.total_potions_dropped = total_potions_dropped
-        self.total_heals_dropped = total_heals_dropped
-
-    def id_totals(self) -> Dict[int, int]:
-        retval = {}
-        for pid in self.potions_ids:
-            if pid not in retval:
-                retval[pid] = 1
-            else:
-                retval[pid] += 1
-        return retval
-
-    def total_dropped(self) -> int:
-        return self.total_scrolls_dropped + self.total_potions_dropped + self.total_heals_dropped
-
-
-class PotionSimulation:
-    sold: List[PickupEnum]
-    used: List[PickupEnum]
-    guesses: Dict[int, PickupEnum]
-    potion_description: Optional[str]
-
-    def __init__(self, sold_ids: List[int] = None, sold: List[PickupEnum] = None,
-                 used_ids: List[int] = None, used: List[PickupEnum] = None):
-        self.sold = sold or []
-        self.used = used or []
-        _sold_ids = sold_ids or []
-        _used_ids = used_ids or []
-        if len(_sold_ids) != len(self.sold) or len(_used_ids) != len(self.used):
-            raise ValueError("Wrong initialization of potion simulation")
-        guesses = {}
-        for index, sold_id in enumerate(_sold_ids):
-            guesses[sold_id] = self.sold[index]
-        for index, used_id in enumerate(_used_ids):
-            guesses[used_id] = self.used[index]
-        self.guesses = guesses
-        if not sold and not used:
-            self.potion_description = None
-        elif sold and not used:
-            self.potion_description = f"Sold {', '.join(pickup_name_mapper[t] for t in sold)}"
-        elif not sold and used:
-            self.potion_description = f"Used {', '.join(pickup_name_mapper[t] for t in used)}"
-        else:
-            self.potion_description = f"Sold {', '.join(pickup_name_mapper[t] for t in sold)} " \
-                                      f"and used {', '.join(pickup_name_mapper[t] for t in used)}"
 
 
 class PotionHistory:

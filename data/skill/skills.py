@@ -21,6 +21,12 @@ class Skills:
             retval[SkillEnum(skills[i])] = levels[i]
         return Skills(retval)
 
+    def to_dict_skills(self):
+        return [s.value for s in self.skills.keys()]
+
+    def to_dict_levels(self):
+        return [s for s in self.skills.values()]
+
     def has_skill(self, skill: SkillEnum) -> bool:
         return self.skills.get(skill) is not None
 

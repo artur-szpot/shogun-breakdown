@@ -2,23 +2,25 @@ from typing import Optional
 
 
 class ShopItem:
+    code: str
     edamame: bool
     missing: Optional[str]
     price: int
     on_sale: bool
 
-    def __init__(self, price: int, edamame: bool = False):
+    def __init__(self, code: str, price: int, edamame: bool = False):
+        self.code = code
         self.price = price
         self.on_sale = False
         self.edamame = edamame
 
     @staticmethod
     def edamame():
-        return ShopItem(5, True)
+        return ShopItem("EdamameBrewShopItem", 5, True)
 
     @staticmethod
     def missing(name: str):
-        retval = ShopItem(-1)
+        retval = ShopItem(name, -1)
         retval.missing = name
         return retval
 

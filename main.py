@@ -1,20 +1,25 @@
+import base64
+import json
 import os
+from json import JSONDecodeError
 from time import sleep
 
 from compare.compare import compare_snapshots
-from history.history import History
 from data.snapshot.snapshot import Snapshot
 from logger import logger, MessageType
+from options import set_options, read_options
+from test_data import test_remade_data
 
 
 def get_time(file):
     return os.stat(file).st_mtime
 
+
 def main_loop(too_early=False):
-    # save_dir = "C:\\Users\\szpot\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
-    save_dir = "C:\\Users\\WZ\\AppData\\LocalLow\\Roboatino\\ShogunShowdown"
+    options = read_options()
     save_file = "RunSaveData.dat"
-    filename = save_dir + "\\" + save_file
+    filename = options['save_dir'] + "\\" + save_file
+    logger.bright_logs = options['bright_logs']
 
     try:
         last_recorded_edited_time = get_time(filename)
@@ -26,8 +31,17 @@ def main_loop(too_early=False):
     if too_early:
         logger.debug_success("Run has started")
 
-    print("load True")
     previous_snapshot = Snapshot.from_file(filename, True)
+    # TODO another dev checkup to see if cheat production works well
+    try:
+        with open(filename, mode='r') as source_file:
+            source = source_file.read()
+        raw_data = json.loads(base64.b64decode(source))
+        remade_snapshot = previous_snapshot.to_dict()
+        test_remade_data(raw_data, remade_snapshot)
+    except JSONDecodeError:
+        pass  # don't much care
+
     compare_snapshots(None, previous_snapshot)
 
     while True:
@@ -47,6 +61,7 @@ def main_loop(too_early=False):
 
 if __name__ == '__main__':
     logger.nice_print([MessageType.INFO], 'Welcome to Shugun Breakdown v0.2')
+    set_options()
 
     # TODO remove; temporarily doubled; allows mid-run start
     logger.splits_info(" ".join([

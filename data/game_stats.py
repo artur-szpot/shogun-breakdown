@@ -92,6 +92,24 @@ class GameStats:
             new_tiles_picked=new_tiles_picked
         )
 
+    def to_dict(self):
+        return {
+            TURN_AROUNDS: self.turn_arounds,
+            COINS: self.coins,
+            COMBOS: self.combos,
+            TURNS: self.turns,
+            TIME: self.time,
+            COMBAT_ROOMS_CLEARED: self.combat_rooms_cleared,
+            SCROLL_PICKUPS: self.scroll_pickups,
+            POTION_PICKUPS: self.potion_pickups,
+            HEAL_PICKUPS: self.heal_pickups,
+            FRIENDLY_KILLS: self.friendly_kills,
+            HITS: self.hits,
+            DAY: self.day,
+            CONSUMABLES_USED: self.consumables_used,
+            NEW_TILES_PICKED: self.new_tiles_picked,
+        }
+
     def clone(self):
         return GameStats(
             version=self.version,

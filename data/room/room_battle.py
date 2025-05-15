@@ -9,7 +9,7 @@ from data.entity.entity import Entity
 from data.entity.entity_enums import EnemyEnum
 from data.entity.entity_mappers import enemy_name_mapper
 from data.entity.hero import Hero
-from data.mappers import room_mapper, pickup_name_mapper, room_number_mapper, boss_room_mapper, room_name_mapper
+from data.mappers import room_number_mapper, boss_room_mapper, room_name_mapper
 from data.room.room_enums import PickupEnum, RoomEnum
 from data.skill.skills import Skills
 from data.snapshot.hit_data import HitData
@@ -133,7 +133,11 @@ class BattleRoom:
     def from_dict(source: Dict, skills: Skills):
         room_raw = source[MAP_SAVE][CURRENT_LOCATION]
         progression = source[PROGRESSION_DATA][PROGRESSION]
-        room = room_mapper.get(room_raw)
+        room = None
+        try:
+            room = RoomEnum(room_raw)
+        except ValueError:
+            pass
         if room is not None:
             variant = source[PROGRESSION_DATA][ROOM_VARIANT]
             is_boss_corrupted = room_number_mapper[room] in source[PROGRESSION_DATA][CORRUPTED_BOSS_SECTORS]
@@ -177,6 +181,36 @@ class BattleRoom:
             variant=variant,
             is_boss_corrupted=is_boss_corrupted,
         )
+
+    def to_dict(self):
+        return {
+            ENEMIES: [enemy.to_dict() for enemy in self.enemies],
+            WAVE_NUMBER: self.wave_number,
+            UNTIL_NEXT_WAVE: self.until_next_wave,
+        }
+
+    def to_dict_progression_data(self, corrupted_boss_sectors):
+        return {
+            PROGRESSION: self.progression,
+            ROOM_VARIANT: self.variant,
+            CORRUPTED_BOSS_SECTORS: corrupted_boss_sectors,
+        }
+
+    def to_dict_pickups(self):
+        retval = []
+        for cell, pickup in self.pickups.items():
+            for pickup_type, total in pickup.items():
+                for i in range(total):
+                    retval.append(pickup_type.value)
+        return retval
+
+    def to_dict_pickup_cells(self):
+        retval = []
+        for cell, pickup in self.pickups.items():
+            for pickup_type, total in pickup.items():
+                for i in range(total):
+                    retval.append(cell)
+        return retval
 
     def clone(self):
         pickups = {loc: {} for loc in self.pickups.keys()}

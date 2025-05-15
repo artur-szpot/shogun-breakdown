@@ -1,6 +1,8 @@
 import json
 from typing import Dict, Tuple, List
 
+import jsondiff as jsondiff
+
 from constants import SKILLS, HERO, FACING, SPECIAL_MOVE_COOLDOWN, MAX_HP, ENTITY_STATE, HP, POISON, ICE, CURSE, SHIELD, \
     HERO_ENUM, HITS, RUN_STATS, FRIENDLY_KILLS, HEAL_PICKUPS, POTION_PICKUPS, SCROLL_PICKUPS, COMBAT_ROOMS_CLEARED, \
     TURNS, COMBOS, COINS, TURN_AROUNDS, SKILL_LEVELS, TIME, CELL, NEW_TILES_PICKED, CONSUMABLES_USED, DAY, PRICE, \
@@ -34,6 +36,15 @@ def is_empty_dict(source: Dict) -> Tuple[bool, Dict]:
     return not bool(whats_left), whats_left
 
 
+def test_remade_data(raw_data: Dict, remade_data: Dict) -> None:
+    print(raw_data[MAP_SAVE])
+    print()
+    print(remade_data[MAP_SAVE])
+    print()
+    diff = jsondiff.diff(raw_data, remade_data)
+    print(diff)
+
+
 def test_data(raw_data: Dict) -> None:
     # Test that all data is being recorded.
     # Remove skills' data
@@ -41,7 +52,6 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[SKILL_LEVELS]
 
     # Remove game stats' data
-    del raw_data[VERSION]
     del raw_data[RUN_STATS][TURN_AROUNDS]
     del raw_data[RUN_STATS][COINS]
     del raw_data[RUN_STATS][COMBOS]
@@ -123,6 +133,7 @@ def test_data(raw_data: Dict) -> None:
     del raw_data[MAP_SAVE][SHOP_COMPONENT]  # used to constrcut whole map in history
 
     # Remove purposely ignored data
+    del raw_data[VERSION]
     del raw_data[HERO][NAME]  # taken from enum
     del raw_data[RUN_IN_PROGRESS]  # why would it not be true?
     del raw_data[RUN_NUMBER]  # how to get it above 0?

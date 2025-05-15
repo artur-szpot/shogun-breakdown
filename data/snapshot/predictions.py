@@ -1,8 +1,7 @@
-from typing import List, Dict
+from typing import List
 
-from data.room.room_enums import PickupEnum
 from data.weapon.weapon import Weapon
-from history.history_potions import PotionSimulation
+from history.potions.history_potions import PotionSimulation
 
 
 class Predictions:

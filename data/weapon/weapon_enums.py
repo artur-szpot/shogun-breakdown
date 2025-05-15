@@ -29,7 +29,7 @@ class WeaponEnum(Enum):
     SHURIKEN = 18
     CHAKRAM = 19
     CURSE = 20
-    # ARTIFACT: 21 this should be sharp turn
+    SHARP_TURN = 21
     EARTH_IMPALE = 22
     MIRROR = 23
     BACK_STRIKE = 24
@@ -64,7 +64,6 @@ class WeaponEnum(Enum):
     BOSS_SWAP = 53
     CORRUPTED_EXPLOSION = 54
 
-    SHARP_TURN = -23
     MAKU = 666  # next stage on sato
 
 

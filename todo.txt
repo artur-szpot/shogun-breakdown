@@ -6,9 +6,13 @@ identify victory (lol (lol how easy with the prediction approach))
 pickup everything at battle end
 make sure combos and friendlies are correct at the end of battle too
 TODO: friendly kill only counts if attacker or direct target have been moved by hero
-TODO new theory: this only works if attacker/target have moved, in any way
+TODO new theory: this only works if attacker/target have moved, in any way NOPE, self-move doesn't count
 when is the deck chakram reset/upped?
 when shogun defeated, count all present for chakram and update room accordingly
 capture where in shogun fight we are
-difficult scenario: warden spawns, twin tachi kills the spawn
 we no longer recognize which potion was used - WHY!?
+
+difficult scenarios:
+ warden spawns, twin tachi kills the spawn
+ enemy spawns on a trap, dies, drops potion
+

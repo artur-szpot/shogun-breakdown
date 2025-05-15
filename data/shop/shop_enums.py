@@ -9,31 +9,31 @@ class ShopServiceEnum(Enum):
 
 
 class ShopType(Enum):
-    WARRING = 0
-    COMBO = 1
-    DANCER = 2
-    GUARDING = 3
-    DAMAGE = 4
-    COOLDOWN = 5
-    SLOT = 6
-    SACRIFICE = 7
-    ENCHANT = 8
-    MOONLIT_PORT = 9
-    WARRIORS_GAMBLE = 10
+    DAMAGE = "DamageUpgrade"
+    COOLDOWN = "CooldownUpgrade"
+    SACRIFICE = "SacrificeTile"
+    WARRIORS_GAMBLE = "WarriorGamble"
+    WARRING = "WarringShop"
+    COMBO = "ComboShop"
+    DANCER = "DancerShop"
+    GUARDING = "GuardingShop"
+    SLOT = "MaxLevelUpgrade"
+    ENCHANT = "EnchantUpgrade"
+    MOONLIT_PORT = "MoonlitPortShop"
 
 
 class ShopEnum(Enum):
-    BAMBOO_GROVE_UP = 11
-    BAMBOO_GROVE_DOWN = 12
-    BEFORE_MOONLIT_PORT_UP = 31
-    BEFORE_MOONLIT_PORT_CENTER = 32
-    BEFORE_MOONLIT_PORT_DOWN = 33
-    MOONLIT_PORT = 51
-    SPIRIT_GATEWAY_UP = 61
-    SPIRIT_GATEWAY_DOWN = 62
-    FORSAKEN_LANDS_UP = 71
-    FORSAKEN_LANDS_DOWN = 72
-    HIDEYOSHI = 99
-    NOBUNAGA = 109
-    IEIASU = 119
-    SHOGUN = 129
+    BAMBOO_GROVE_UP = "green-shop-1A"
+    BAMBOO_GROVE_DOWN = "green-shop-1B"
+    BEFORE_MOONLIT_PORT_UP = "brown-shop-1A"
+    BEFORE_MOONLIT_PORT_CENTER = "brown-shop-1B"
+    BEFORE_MOONLIT_PORT_DOWN = "brown-shop-1C"
+    MOONLIT_PORT = "brown-combat-2"
+    SPIRIT_GATEWAY_UP = "red-shop-1A"
+    SPIRIT_GATEWAY_DOWN = "red-shop-1B"
+    FORSAKEN_LANDS_UP = "purple-shop-1A"
+    FORSAKEN_LANDS_DOWN = "purple-shop-1B"
+    HIDEYOSHI = "white-shop-1"
+    NOBUNAGA = "gray-shop-1"
+    IEIASU = "darkGreen-shop-1"
+    SHOGUN = "shogun-shop-1"

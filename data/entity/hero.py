@@ -1,5 +1,7 @@
 from typing import List
 
+from constants import SPECIAL_MOVE_COOLDOWN, ATTACK_QUEUE, FACING, MAX_HP, HP, POISON, ICE, CURSE, SHIELD, ENTITY_STATE, \
+    HERO_ENUM, CELL, NAME
 from data.entity.entity import Entity
 from data.entity.entity_enums import EntityType, HeroEnum
 from data.entity.entity_hp import EntityHp
@@ -45,6 +47,24 @@ class Hero(Entity):
             special_move_cooldown=self.special_move_cooldown,
             has_reactive_shield=self.has_reactive_shield,
         )
+
+    def to_dict(self):
+        return {
+            HERO_ENUM: self.hero_id.value,
+            NAME: hero_name_mapper[self.hero_id],
+            ENTITY_STATE: {
+                SHIELD: self.state.shield,
+                CURSE: self.state.curse,
+                ICE: self.state.ice,
+                POISON: self.state.poison,
+                HP: self.hp.hp,
+                MAX_HP: self.hp.max_hp,
+            },
+            FACING: self.position.facing,
+            CELL: self.position.cell,
+            ATTACK_QUEUE: [weapon.to_dict() for weapon in self.attack_queue],
+            SPECIAL_MOVE_COOLDOWN: self.special_move_cooldown,
+        }
 
     def is_equal(self, other, debug: bool = False):
         if not debug:
